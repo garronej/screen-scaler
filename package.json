@@ -1,10 +1,10 @@
 {
-    "name": "#{REPO_NAME}#",
+    "name": "react-screen-scaler",
     "version": "0.0.0",
-    "description": "#{DESC}#",
+    "description": "🖥️🔍 Design Once, Render Everywhere: Screen-size agnostic React development for uniform environments ",
     "repository": {
         "type": "git",
-        "url": "git://github.com/#{USER_OR_ORG}#/#{REPO_NAME}#.git"
+        "url": "git://github.com/garronej/react-screen-scaler.git"
     },
     "scripts": {
         "build": "tsc",
@@ -36,7 +36,7 @@
             "pre-commit": "lint-staged -v"
         }
     },
-    "author": "u/#{USER_OR_ORG}#",
+    "author": "u/garronej",
     "license": "MIT",
     "files": [
         "src/",
