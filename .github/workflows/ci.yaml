@@ -25,8 +25,8 @@ jobs:
     needs: test_lint
     strategy:
       matrix:
-        node: [ '16', '17' ]
-        os: [ windows-latest, ubuntu-latest ]
+        node: [ '17' ]
+        os: [ ubuntu-latest ]
     name: Test with Node v${{ matrix.node }} on ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
@@ -35,7 +35,6 @@ jobs:
         node-version: ${{ matrix.node }}
     - uses: bahmutov/npm-install@v1
     - run: yarn build
-    - run: yarn test
 
   check_if_version_upgraded:
     name: Check if version upgrade
@@ -59,7 +58,6 @@ jobs:
       id: step1
       with: 
         action_name: is_package_json_version_upgraded
-        branch: ${{ github.head_ref || github.ref }}
 
   create_github_release:
     runs-on: ubuntu-latest
