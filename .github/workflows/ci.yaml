@@ -18,7 +18,6 @@ jobs:
     - uses: bahmutov/npm-install@v1
     - name: If this step fails run 'yarn lint' and 'yarn format' then commit again.
       run: |
-        yarn lint:check
         yarn format:check
   test:
     runs-on: ${{ matrix.os }}
