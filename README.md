@@ -34,3 +34,22 @@ React-ScreenScaler is a tool specifically designed for developers who build web 
 -   This library only works with Single Page Applications (SPA) using React.
 -   Server-side rendering is not supported.
     The use of "vh" and "vw" CSS properties is not supported.
+
+## Contributing
+
+```bash
+git clone https://github.com/garronej/react-screen-scaler
+cd react-screen-scaler
+yarn
+
+# Start the test app in watch mode
+yarn start-test-app
+
+# Link in an external project in watch mode
+yarn link-in-app YOUR-APP # ../YOUR-APP is supposed to exist
+```
+
+NOTE: We provide [both a ESM and CJS distribution](https://github.com/garronej/ts-ci#esm-for-bundlers-browser--cjs-for-node)
+when in realty there is no reason not to provide [only a CJS distribution](https://github.com/garronej/ts-ci#cjs-only-default).  
+This only reason to do so it to accommodate the a bug in Vite that doesn't support symbolic link correctly which is a problem for our test app.  
+When there is a symbolic link the target must be ESM for some reason...

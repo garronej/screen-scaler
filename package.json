@@ -7,15 +7,29 @@
         "url": "git://github.com/garronej/react-screen-scaler.git"
     },
     "scripts": {
-        "build": "tsc",
+        "build:cjs": "tsc",
+        "build:esm": "tsc --module ES6 --outDir dist/esm",
+        "build": "yarn build:cjs && yarn build:esm",
+        "watch": "yarn build:cjs -w & yarn build:esm -w",
         "_format": "prettier '**/*.{ts,tsx,json,md}'",
         "format": "npm run _format -- --write",
         "format:check": "npm run _format -- --list-different",
-        "link-in-app": "ts-node --skipProject scripts/link-in-app.ts",
-        "start-test-app": "ts-node --skipProject scripts/link-in-test-app.ts && cd test-app && yarn dev"
+        "link-in-app": "yarn build && (ts-node --skipProject scripts/link-in-app.ts & yarn watch)",
+        "start-test-app": "yarn build && ts-node --skipProject scripts/link-in-test-app.ts && ((cd test-app && yarn dev) & yarn watch)"
     },
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
+    "module": "dist/esm/index.js",
+    "exports": {
+        ".": {
+            "module": "./dist/esm/index.js",
+            "default": "./dist/index.js"
+        },
+        "./*": {
+            "module": "./dist/esm/*.js",
+            "default": "./dist/*.js"
+        }
+    },
     "lint-staged": {
         "*.{ts,tsx,json,md}": [
             "prettier --write"
