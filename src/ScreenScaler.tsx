@@ -178,8 +178,6 @@ export function ScreenScaler(props: ScreenScalerProps) {
 
     const { zoomFactor, expectedWindowInnerWidth, expectedWindowInnerHeight } = resultOfGetConfig;
 
-    console.log("hello!!!!!!!!!!!!!!!!!!!!ouf bim");
-
     return (
         <div
             about={`${ScreenScaler.name} outer wrapper`}
