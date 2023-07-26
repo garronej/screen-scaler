@@ -1321,8 +1321,10 @@ react-refresh@^0.14.0:
   resolved "https://registry.yarnpkg.com/react-refresh/-/react-refresh-0.14.0.tgz#4e02825378a5f227079554d4284889354e5f553e"
   integrity sha512-wViHqhAd8OHeLS/IRMJjTSDHF3U9eWi62F/MledQGPdJGDhodXJ9PBLNGr6WWL7qlH12Mt3TyTpbS+hGXMjCzQ==
 
-"react-screen-scaler@file:../dist":
+react-screen-scaler@latest:
   version "0.0.1"
+  resolved "https://registry.yarnpkg.com/react-screen-scaler/-/react-screen-scaler-0.0.1.tgz#fbbdc51a1b9f0f509d2c65f8145de7bb17bc2f88"
+  integrity sha512-Ifp3ncvvPNysGB+1rkgRzB2/TKciiPMqjbTUAQwiNW8bGHUEu2Ogw1AiNpYcz/PCnqeUOWyLdrhDDJFjFlXQYw==
   dependencies:
     tsafe "^1.6.4"
 

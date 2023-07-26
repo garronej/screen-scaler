@@ -1,4 +1,4 @@
-import { ScreenScaler } from "react-screen-scaler/ScreenScaler";
+import { ScreenScaler } from "react-screen-scaler";
 
 export function App() {
     return (

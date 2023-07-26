@@ -12,8 +12,7 @@
         "format": "npm run _format -- --write",
         "format:check": "npm run _format -- --list-different",
         "link-in-app": "ts-node --skipProject scripts/link-in-app.ts",
-        "link-in-test-app": "ts-node --skipProject scripts/link-in-test-app.ts",
-        "start-test-app": "cd test-app && yarn dev"
+        "start-test-app": "ts-node --skipProject scripts/link-in-test-app.ts && cd test-app && yarn dev"
     },
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

@@ -1,6 +1,6 @@
 {
     "compilerOptions": {
-        "module": "CommonJS",
+        "module": "ES6",
         "target": "es5",
         "moduleResolution": "node",
         "lib": ["es2015", "DOM", "ES2019.Object"],
@@ -19,6 +19,5 @@
         "noFallthroughCasesInSwitch": true,
         "skipLibCheck": true
     },
-    "include": ["src"],
-    "exclude": ["src/**/*.deno.ts", "src/**/*.deno.tsx"]
+    "include": ["src"]
 }
