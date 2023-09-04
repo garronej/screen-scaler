@@ -1,8 +1,9 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useReducer } from "react";
 import { useGuaranteedMemo } from "./tools/useGuaranteedMemo";
 import { useEffect } from "react";
 import { useConst } from "./tools/useConst";
 import { assert } from "tsafe/assert";
+import { createGetRealWindowDimensions } from "./getRealWindowDimensions";
 
 export class ScreenScalerOutOfRangeError extends Error {
     constructor(public readonly fallbackNode: ReactNode) {
@@ -23,42 +24,19 @@ export type ScreenScalerProps = {
     children: ReactNode;
 };
 
-function createGetRealDimension() {
-    const createGetRealDimensionX = (dimension: "Width" | "Height"): (() => number) => {
-        const pd = Object.getOwnPropertyDescriptor(window, `inner${dimension}`);
-
-        assert(pd !== undefined);
-
-        const { get } = pd;
-
-        assert(get !== undefined);
-
-        return get.bind(window);
-    };
-
-    return {
-        "getRealWindowInnerWidth": createGetRealDimensionX("Width"),
-        "getRealWindowInnerHeight": createGetRealDimensionX("Height")
-    };
-}
-
 export function ScreenScaler(props: ScreenScalerProps) {
     const { getConfig, children } = props;
 
     const { realWindowInnerWidth, realWindowInnerHeight } = (function useClosure() {
-        const { getRealWindowInnerWidth, getRealWindowInnerHeight } = useConst(createGetRealDimension);
+        const { getRealWindowDimensions } = createGetRealWindowDimensions();
 
-        const [realDimensions, setRealDimensions] = useState(() => ({
-            "realWindowInnerWidth": getRealWindowInnerWidth(),
-            "realWindowInnerHeight": getRealWindowInnerHeight()
-        }));
+        const [realWindowDimensions, updateRealWindowDimensions] = useReducer(
+            () => getRealWindowDimensions(),
+            getRealWindowDimensions()
+        );
 
         useEffect(() => {
-            const onResize = () =>
-                setRealDimensions({
-                    "realWindowInnerWidth": getRealWindowInnerWidth(),
-                    "realWindowInnerHeight": getRealWindowInnerHeight()
-                });
+            const onResize = () => updateRealWindowDimensions();
 
             window.addEventListener("resize", onResize);
 
@@ -67,7 +45,7 @@ export function ScreenScaler(props: ScreenScalerProps) {
             };
         }, []);
 
-        return realDimensions;
+        return realWindowDimensions;
     })();
 
     const { resultOfGetConfig } = (function useClosure() {
