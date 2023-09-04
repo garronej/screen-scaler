@@ -1,13 +1,13 @@
-import { ScreenScaler } from "react-screen-scaler";
+import { createScreenScaler } from "react-screen-scaler";
 
-export function App(){
+const { ScreenScaler } = createScreenScaler({
+    "expectedWindowInnerWidth": 1920
+});
 
-    return(
-        <ScreenScaler
-            getConfig={() => ({
-                "expectedWindowInnerWidth": 1920
-            })}
-        >
+export function App() {
+
+    return (
+        <ScreenScaler>
             <h1>Hello World</h1>
         </ScreenScaler>
     );

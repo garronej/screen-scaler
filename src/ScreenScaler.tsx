@@ -5,174 +5,161 @@ import { useConst } from "./tools/useConst";
 import { assert } from "tsafe/assert";
 import { createGetRealWindowDimensions } from "./getRealWindowDimensions";
 
-export class ScreenScalerOutOfRangeError extends Error {
-    constructor(public readonly fallbackNode: ReactNode) {
-        super();
+export function createScreenScaler(
+    expectedDimensions:
+        | { expectedWindowInnerWidth: number }
+        | ((params: {
+              realWindowInnerWidth: number;
+              realWindowInnerHeight: number;
+          }) => { expectedWindowInnerWidth: number } | undefined)
+) {
+    const calculateExpectedDimensions =
+        typeof expectedDimensions === "function" ? expectedDimensions : () => expectedDimensions;
 
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
+    const { getRealWindowDimensions } = createGetRealWindowDimensions();
 
-export type ScreenScalerProps = {
-    /**
-     * May throw 'import { ScreenScalerOutOfRangeError } from "react-screen-scaler";'
-     * to specify a fallback screen on edge cases.
-     */
-    getConfig: (props: { realWindowInnerWidth: number; realWindowInnerHeight: number }) => {
-        expectedWindowInnerWidth: number;
-    };
-    children: ReactNode;
-};
+    function ScreenScaler(props: { children: ReactNode; fallback?: ReactNode }) {
+        const { children, fallback } = props;
 
-export function ScreenScaler(props: ScreenScalerProps) {
-    const { getConfig, children } = props;
+        const { realWindowInnerWidth, realWindowInnerHeight } = (function useClosure() {
+            const [realWindowDimensions, updateRealWindowDimensions] = useReducer(
+                () => getRealWindowDimensions(),
+                getRealWindowDimensions()
+            );
 
-    const { realWindowInnerWidth, realWindowInnerHeight } = (function useClosure() {
-        const { getRealWindowDimensions } = createGetRealWindowDimensions();
+            useEffect(() => {
+                const onResize = () => updateRealWindowDimensions();
 
-        const [realWindowDimensions, updateRealWindowDimensions] = useReducer(
-            () => getRealWindowDimensions(),
-            getRealWindowDimensions()
-        );
+                window.addEventListener("resize", onResize);
 
-        useEffect(() => {
-            const onResize = () => updateRealWindowDimensions();
+                return () => {
+                    window.removeEventListener("resize", onResize);
+                };
+            }, []);
 
-            window.addEventListener("resize", onResize);
+            return realWindowDimensions;
+        })();
 
-            return () => {
-                window.removeEventListener("resize", onResize);
-            };
-        }, []);
+        const { resultOfGetConfig } = (function useClosure() {
+            const refResultOfGetConfig = useConst<{
+                current:
+                    | {
+                          isOutOfRange: false;
+                          zoomFactor: number;
+                          expectedWindowInnerWidth: number;
+                          expectedWindowInnerHeight: number;
+                      }
+                    | { isOutOfRange: true }
+                    | undefined;
+            }>(() => ({ "current": undefined }));
 
-        return realWindowDimensions;
-    })();
+            useGuaranteedMemo(() => {
+                //We skip refresh when pinch and zoom
+                if (
+                    refResultOfGetConfig.current !== undefined &&
+                    (window.scrollY !== 0 || window.scrollX !== 0)
+                ) {
+                    return;
+                }
 
-    const { resultOfGetConfig } = (function useClosure() {
-        const refResultOfGetConfig = useConst<{
-            current:
-                | {
-                      isOutOfRange: false;
-                      zoomFactor: number;
-                      expectedWindowInnerWidth: number;
-                      expectedWindowInnerHeight: number;
-                  }
-                | { isOutOfRange: true; fallbackNode: ReactNode }
-                | undefined;
-        }>(() => ({ "current": undefined }));
-
-        useGuaranteedMemo(() => {
-            //We skip refresh when pinch and zoom
-            if (
-                refResultOfGetConfig.current !== undefined &&
-                (window.scrollY !== 0 || window.scrollX !== 0)
-            ) {
-                return;
-            }
-
-            let viewPortConfig: ReturnType<typeof getConfig>;
-
-            try {
-                viewPortConfig = getConfig({
+                const result = calculateExpectedDimensions({
                     realWindowInnerWidth,
                     realWindowInnerHeight
                 });
-            } catch (error) {
-                if (!(error instanceof ScreenScalerOutOfRangeError)) {
-                    throw error;
+
+                if (result === undefined) {
+                    refResultOfGetConfig.current = {
+                        "isOutOfRange": true
+                    };
+
+                    return;
                 }
 
-                const { fallbackNode } = error;
+                const { expectedWindowInnerWidth } = result;
+
+                const zoomFactor = realWindowInnerWidth / expectedWindowInnerWidth;
 
                 refResultOfGetConfig.current = {
-                    "isOutOfRange": true,
-                    fallbackNode
+                    "isOutOfRange": false,
+                    zoomFactor,
+                    expectedWindowInnerWidth,
+                    "expectedWindowInnerHeight": realWindowInnerHeight / zoomFactor
                 };
 
-                return;
-            }
+                //Pollute window.innerWidth and window.innerHeight
+                Object.defineProperties(window, {
+                    "innerWidth": {
+                        "value": refResultOfGetConfig.current.expectedWindowInnerWidth,
+                        "enumerable": true,
+                        "configurable": true,
+                        "writable": false
+                    },
+                    "innerHeight": {
+                        "value": refResultOfGetConfig.current.expectedWindowInnerHeight,
+                        "enumerable": true,
+                        "configurable": true,
+                        "writable": false
+                    }
+                });
 
-            const zoomFactor = realWindowInnerWidth / viewPortConfig.expectedWindowInnerWidth;
+                function getBoundingClientRect(this: HTMLElement) {
+                    const { left, top, width, height, right, bottom } =
+                        getBoundingClientRect.real.call(this);
 
-            refResultOfGetConfig.current = {
-                "isOutOfRange": false,
-                zoomFactor,
-                "expectedWindowInnerWidth": viewPortConfig.expectedWindowInnerWidth,
-                "expectedWindowInnerHeight": realWindowInnerHeight / zoomFactor
-            };
-
-            //Pollute window.innerWidth and window.innerHeight
-            Object.defineProperties(window, {
-                "innerWidth": {
-                    "value": refResultOfGetConfig.current.expectedWindowInnerWidth,
-                    "enumerable": true,
-                    "configurable": true,
-                    "writable": false
-                },
-                "innerHeight": {
-                    "value": refResultOfGetConfig.current.expectedWindowInnerHeight,
-                    "enumerable": true,
-                    "configurable": true,
-                    "writable": false
+                    return {
+                        "left": left / zoomFactor,
+                        "top": top / zoomFactor,
+                        "width": width / zoomFactor,
+                        "height": height / zoomFactor,
+                        "right": right / zoomFactor,
+                        "bottom": bottom / zoomFactor
+                    };
                 }
-            });
 
-            function getBoundingClientRect(this: HTMLElement) {
-                const { left, top, width, height, right, bottom } =
-                    getBoundingClientRect.real.call(this);
+                getBoundingClientRect.real =
+                    (HTMLDivElement.prototype.getBoundingClientRect as { real?: () => DOMRect }).real ??
+                    Element.prototype.getBoundingClientRect;
 
-                return {
-                    "left": left / zoomFactor,
-                    "top": top / zoomFactor,
-                    "width": width / zoomFactor,
-                    "height": height / zoomFactor,
-                    "right": right / zoomFactor,
-                    "bottom": bottom / zoomFactor
-                };
-            }
+                //Pollute HTMLDivElement.prototype.getBoundingClientRect
+                Object.defineProperty(HTMLElement.prototype, "getBoundingClientRect", {
+                    "value": getBoundingClientRect,
+                    "enumerable": true,
+                    "configurable": true,
+                    "writable": false
+                });
+            }, [realWindowInnerWidth, realWindowInnerHeight]);
 
-            getBoundingClientRect.real =
-                (HTMLDivElement.prototype.getBoundingClientRect as { real?: () => DOMRect }).real ??
-                Element.prototype.getBoundingClientRect;
+            assert(refResultOfGetConfig.current !== undefined);
 
-            //Pollute HTMLDivElement.prototype.getBoundingClientRect
-            Object.defineProperty(HTMLElement.prototype, "getBoundingClientRect", {
-                "value": getBoundingClientRect,
-                "enumerable": true,
-                "configurable": true,
-                "writable": false
-            });
-        }, [getConfig, realWindowInnerWidth, realWindowInnerHeight]);
+            return { "resultOfGetConfig": refResultOfGetConfig.current };
+        })();
 
-        assert(refResultOfGetConfig.current !== undefined);
+        if (resultOfGetConfig.isOutOfRange) {
+            return <>{fallback ?? <>ScreenScaler out of range</>}</>;
+        }
 
-        return { "resultOfGetConfig": refResultOfGetConfig.current };
-    })();
+        const { zoomFactor, expectedWindowInnerWidth, expectedWindowInnerHeight } = resultOfGetConfig;
 
-    if (resultOfGetConfig.isOutOfRange) {
-        const { fallbackNode } = resultOfGetConfig;
-        return <>{fallbackNode}</>;
+        return (
+            <div
+                about={`${ScreenScaler.name} outer wrapper`}
+                style={{ "height": "100vh", "overflow": "hidden", "border": "1px solid red" }}
+            >
+                <div
+                    about={`${ScreenScaler.name} inner wrapper`}
+                    style={{
+                        "transform": `scale(${zoomFactor})`,
+                        "transformOrigin": "0 0",
+                        "width": expectedWindowInnerWidth,
+                        "height": expectedWindowInnerHeight,
+                        "overflow": "hidden"
+                    }}
+                >
+                    {children}
+                </div>
+            </div>
+        );
     }
 
-    const { zoomFactor, expectedWindowInnerWidth, expectedWindowInnerHeight } = resultOfGetConfig;
-
-    return (
-        <div
-            about={`${ScreenScaler.name} outer wrapper`}
-            style={{ "height": "100vh", "overflow": "hidden", "border": "1px solid red" }}
-        >
-            <div
-                about={`${ScreenScaler.name} inner wrapper`}
-                style={{
-                    "transform": `scale(${zoomFactor})`,
-                    "transformOrigin": "0 0",
-                    "width": expectedWindowInnerWidth,
-                    "height": expectedWindowInnerHeight,
-                    "overflow": "hidden"
-                }}
-            >
-                {children}
-            </div>
-        </div>
-    );
+    return { ScreenScaler };
 }
