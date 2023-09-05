@@ -79,6 +79,11 @@ export function createScreenScaler(
             ];
         });
 
+    const evtStateNoPinchAndZoom = evtState
+        .toStateless()
+        .pipe(state => (window.scrollY !== 0 || window.scrollX !== 0 ? null : [state]))
+        .toStateful(evtState.state);
+
     document.body.style.margin = "0";
 
     Object.defineProperties(window, {
@@ -156,10 +161,66 @@ export function createScreenScaler(
         });
     }
 
-    const evtStateNoPinchAndZoom = evtState
-        .toStateless()
-        .pipe(state => (window.scrollY !== 0 || window.scrollX !== 0 ? null : [state]))
-        .toStateful(evtState.state);
+    {
+        const RealResizeObserver = window.ResizeObserver;
+
+        class CustomResizeObserver extends RealResizeObserver {
+            private ctx = Evt.newCtx();
+
+            constructor(private callback: ResizeObserverCallback) {
+                super(callback);
+            }
+
+            private targets = new Set<Element>();
+
+            observe(target: Element, options?: ResizeObserverOptions | undefined): void {
+                super.observe(target, options);
+
+                this.targets.add(target);
+
+                evtStateNoPinchAndZoom.toStateless().attach(this.ctx, () => {
+                    this.callback(
+                        Array.from(this.targets).map(target => {
+                            const contentRect = target.getBoundingClientRect();
+
+                            const boxSize = {
+                                "inlineSize": contentRect.width,
+                                "blockSize": contentRect.height
+                            };
+
+                            const entry: ResizeObserverEntry = {
+                                target,
+                                contentRect,
+                                "borderBoxSize": [boxSize],
+                                "contentBoxSize": [boxSize],
+                                "devicePixelContentBoxSize": [boxSize]
+                            };
+
+                            return entry;
+                        }),
+                        this
+                    );
+                });
+            }
+
+            unobserve(target: Element): void {
+                super.unobserve(target);
+
+                this.targets.delete(target);
+
+                if (this.targets.size === 0) {
+                    this.ctx.done();
+                }
+            }
+
+            disconnect(): void {
+                super.disconnect();
+                this.ctx.done();
+            }
+        }
+
+        window.ResizeObserver = CustomResizeObserver;
+    }
 
     function ScreenScaler(props: { children: ReactNode; fallback?: ReactNode }) {
         const { children, fallback } = props;
