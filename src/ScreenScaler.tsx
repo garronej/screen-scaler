@@ -42,8 +42,6 @@ export function createScreenScaler(
             return realWindowDimensions;
         })();
 
-        console.log({ realWindowInnerWidth });
-
         const { resultOfGetConfig } = (function useClosure() {
             const refResultOfGetConfig = useConst<{
                 current:
