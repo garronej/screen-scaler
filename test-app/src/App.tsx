@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { createScreenScaler } from "react-screen-scaler";
 import { useDomRect } from "powerhooks/tools/useDomRect";
 
@@ -16,6 +17,30 @@ const { ScreenScaler } = createScreenScaler(
 export function App() {
 
     const { ref, domRect: { width } } = useDomRect();
+
+    useEffect(
+        ()=>{
+
+            if( ref.current === null ){
+                return;
+            }
+
+            // Use resize observer
+            const resizeObserver = new ResizeObserver(event => {
+                console.log("resizeObserver", Object.getPrototypeOf(event[0]));
+
+            });
+
+            console.log(Object.getOwnPropertyDescriptor(ResizeObserverEntry, "contentRect"));
+
+            resizeObserver.observe(ref.current);
+
+
+        },
+        [ref.current]
+    );
+
+    
 
     console.log(width);
 
