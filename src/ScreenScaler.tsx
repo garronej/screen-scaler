@@ -1,189 +1,178 @@
-import { type ReactNode, useReducer } from "react";
-import { useGuaranteedMemo } from "./tools/useGuaranteedMemo";
-import { useEffect } from "react";
-import { useConst } from "./tools/useConst";
+import { type ReactNode } from "react";
 import { assert } from "tsafe/assert";
+import { Evt } from "evt";
+import { useRerenderOnStateChange } from "evt/hooks";
 
 export function createScreenScaler(
     expectedDimensions:
-        | { expectedWindowInnerWidth: number }
+        | { targetWindowInnerWidth: number }
         | ((params: {
               realWindowInnerWidth: number;
               realWindowInnerHeight: number;
-          }) => { expectedWindowInnerWidth: number } | undefined)
+          }) => { targetWindowInnerWidth: number } | undefined)
 ) {
     const calculateExpectedDimensions =
         typeof expectedDimensions === "function" ? expectedDimensions : () => expectedDimensions;
 
+    type State = {
+        realWindowInnerHeight: number;
+        realWindowInnerWidth: number;
+    } & (
+        | {
+              isOutOfRange: false;
+              zoomFactor: number;
+              targetWindowInnerWidth: number;
+              targetWindowInnerHeight: number;
+          }
+        | { isOutOfRange: true }
+    );
+
+    const evtState = Evt.from(window, "resize")
+        .toStateful()
+        .pipe(
+            (() => {
+                const { get: innerWidthGetter } =
+                    Object.getOwnPropertyDescriptor(window, "innerWidth") ?? {};
+                const { get: innerHeightGetter } =
+                    Object.getOwnPropertyDescriptor(window, "innerHeight") ?? {};
+
+                assert(innerWidthGetter !== undefined);
+                assert(innerHeightGetter !== undefined);
+
+                return () => [
+                    {
+                        "realWindowInnerWidth": innerWidthGetter.call(window),
+                        "realWindowInnerHeight": innerHeightGetter.call(window)
+                    }
+                ];
+            })()
+        )
+        .pipe(({ realWindowInnerHeight, realWindowInnerWidth }): [State] => {
+            const result = calculateExpectedDimensions({
+                realWindowInnerWidth,
+                realWindowInnerHeight
+            });
+
+            if (result === undefined) {
+                return [
+                    {
+                        "isOutOfRange": true,
+                        realWindowInnerHeight,
+                        realWindowInnerWidth
+                    }
+                ];
+            }
+
+            const { targetWindowInnerWidth } = result;
+
+            const zoomFactor = realWindowInnerWidth / targetWindowInnerWidth;
+
+            return [
+                {
+                    "isOutOfRange": false,
+                    zoomFactor,
+                    targetWindowInnerWidth,
+                    "targetWindowInnerHeight": realWindowInnerHeight / zoomFactor,
+                    realWindowInnerHeight,
+                    realWindowInnerWidth
+                }
+            ];
+        });
+
     document.body.style.margin = "0";
 
-    const { updateDOMOverrides } = (() => {
-        let zoomFactor = 1;
-
-        {
-            const { get: innerWidthGetter } =
-                Object.getOwnPropertyDescriptor(window, "innerWidth") ?? {};
-            const { get: innerHeightGetter } =
-                Object.getOwnPropertyDescriptor(window, "innerHeight") ?? {};
-
-            assert(innerWidthGetter !== undefined);
-            assert(innerHeightGetter !== undefined);
-
-            Object.defineProperties(window, {
-                "innerWidth": {
-                    "get": () => innerWidthGetter.call(window) / zoomFactor,
-                    "enumerable": true,
-                    "configurable": true,
-                    "writable": false
-                },
-                "innerHeight": {
-                    "get": () => innerHeightGetter.call(window) / zoomFactor,
-                    "enumerable": true,
-                    "configurable": true,
-                    "writable": false
-                }
-            });
+    Object.defineProperties(window, {
+        "innerWidth": {
+            "get": () =>
+                evtState.state.isOutOfRange
+                    ? evtState.state.realWindowInnerWidth
+                    : evtState.state.targetWindowInnerWidth,
+            "set": undefined,
+            "enumerable": true,
+            "configurable": true
+        },
+        "innerHeight": {
+            "get": () =>
+                evtState.state.isOutOfRange
+                    ? evtState.state.realWindowInnerHeight
+                    : evtState.state.targetWindowInnerHeight,
+            "set": undefined,
+            "enumerable": true,
+            "configurable": true
         }
+    });
 
-        // Pollute getBoundingClientRect
-        {
-            const realGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+    // Pollute getBoundingClientRect
+    {
+        const realGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
 
-            //Pollute HTMLDivElement.prototype.getBoundingClientRect
-            Object.defineProperty(HTMLElement.prototype, "getBoundingClientRect", {
-                "value": function getBoundingClientRect(this: HTMLElement) {
-                    const { left, top, width, height, right, bottom } =
-                        realGetBoundingClientRect.call(this);
+        //Pollute HTMLDivElement.prototype.getBoundingClientRect
+        Object.defineProperty(HTMLElement.prototype, "getBoundingClientRect", {
+            "value": function getBoundingClientRect(this: HTMLElement) {
+                const { left, top, width, height, right, bottom } = realGetBoundingClientRect.call(this);
 
-                    return {
-                        "left": left / zoomFactor,
-                        "top": top / zoomFactor,
-                        "width": width / zoomFactor,
-                        "height": height / zoomFactor,
-                        "right": right / zoomFactor,
-                        "bottom": bottom / zoomFactor
-                    };
-                },
-                "enumerable": true,
-                "configurable": true,
-                "writable": false
-            });
-        }
+                const zoomFactor = evtState.state.isOutOfRange ? 1 : evtState.state.zoomFactor;
 
-        // Pollute the argument of ResizeObserver callback
-        {
-            const { get: realContentRectGetter } =
-                Object.getOwnPropertyDescriptor(ResizeObserverEntry.prototype, "contentRect") ?? {};
+                return {
+                    "left": left / zoomFactor,
+                    "top": top / zoomFactor,
+                    "width": width / zoomFactor,
+                    "height": height / zoomFactor,
+                    "right": right / zoomFactor,
+                    "bottom": bottom / zoomFactor
+                };
+            },
+            "enumerable": true,
+            "configurable": true,
+            "writable": false
+        });
+    }
 
-            assert(realContentRectGetter !== undefined);
+    // Pollute the argument of ResizeObserver callback
+    {
+        const { get: realContentRectGetter } =
+            Object.getOwnPropertyDescriptor(ResizeObserverEntry.prototype, "contentRect") ?? {};
 
-            Object.defineProperty(ResizeObserver.prototype, "contentRect", {
-                "configurable": true,
-                "enumerable": true,
-                "set": undefined,
-                "get": function (this: ResizeObserverEntry) {
-                    const { left, top, width, height, right, bottom } = realContentRectGetter.call(this);
+        assert(realContentRectGetter !== undefined);
 
-                    return {
-                        "left": left / zoomFactor,
-                        "top": top / zoomFactor,
-                        "width": width / zoomFactor,
-                        "height": height / zoomFactor,
-                        "right": right / zoomFactor,
-                        "bottom": bottom / zoomFactor
-                    };
-                }
-            });
-        }
+        Object.defineProperty(ResizeObserver.prototype, "contentRect", {
+            "configurable": true,
+            "enumerable": true,
+            "set": undefined,
+            "get": function (this: ResizeObserverEntry) {
+                const { left, top, width, height, right, bottom } = realContentRectGetter.call(this);
 
-        function updateDOMOverrides(params: { zoomFactor: number }) {
-            zoomFactor = params.zoomFactor;
-        }
+                const zoomFactor = evtState.state.isOutOfRange ? 1 : evtState.state.zoomFactor;
 
-        return { updateDOMOverrides };
-    })();
+                return {
+                    "left": left / zoomFactor,
+                    "top": top / zoomFactor,
+                    "width": width / zoomFactor,
+                    "height": height / zoomFactor,
+                    "right": right / zoomFactor,
+                    "bottom": bottom / zoomFactor
+                };
+            }
+        });
+    }
+
+    const evtStateNoPinchAndZoom = evtState
+        .toStateless()
+        .pipe(state => (window.scrollY !== 0 || window.scrollX !== 0 ? null : [state]))
+        .toStateful(evtState.state);
 
     function ScreenScaler(props: { children: ReactNode; fallback?: ReactNode }) {
         const { children, fallback } = props;
 
-        const { realWindowInnerWidth, realWindowInnerHeight } = (function useClosure() {
-            const [realWindowDimensions, updateRealWindowDimensions] = useReducer(
-                () => getRealWindowDimensions(),
-                getRealWindowDimensions()
-            );
+        useRerenderOnStateChange(evtStateNoPinchAndZoom);
 
-            useEffect(() => {
-                const onResize = () => updateRealWindowDimensions();
+        const state = evtStateNoPinchAndZoom.state;
 
-                window.addEventListener("resize", onResize);
-
-                return () => {
-                    window.removeEventListener("resize", onResize);
-                };
-            }, []);
-
-            return realWindowDimensions;
-        })();
-
-        const { resultOfGetConfig } = (function useClosure() {
-            const refResultOfGetConfig = useConst<{
-                current:
-                    | {
-                          isOutOfRange: false;
-                          zoomFactor: number;
-                          expectedWindowInnerWidth: number;
-                          expectedWindowInnerHeight: number;
-                      }
-                    | { isOutOfRange: true }
-                    | undefined;
-            }>(() => ({ "current": undefined }));
-
-            useGuaranteedMemo(() => {
-                //We skip refresh when pinch and zoom
-                if (
-                    refResultOfGetConfig.current !== undefined &&
-                    (window.scrollY !== 0 || window.scrollX !== 0)
-                ) {
-                    return;
-                }
-
-                const result = calculateExpectedDimensions({
-                    realWindowInnerWidth,
-                    realWindowInnerHeight
-                });
-
-                if (result === undefined) {
-                    refResultOfGetConfig.current = {
-                        "isOutOfRange": true
-                    };
-
-                    return;
-                }
-
-                const { expectedWindowInnerWidth } = result;
-
-                const zoomFactor = realWindowInnerWidth / expectedWindowInnerWidth;
-
-                updateDOMOverrides({ zoomFactor });
-
-                refResultOfGetConfig.current = {
-                    "isOutOfRange": false,
-                    zoomFactor,
-                    expectedWindowInnerWidth,
-                    "expectedWindowInnerHeight": realWindowInnerHeight / zoomFactor
-                };
-            }, [realWindowInnerWidth, realWindowInnerHeight]);
-
-            assert(refResultOfGetConfig.current !== undefined);
-
-            return { "resultOfGetConfig": refResultOfGetConfig.current };
-        })();
-
-        if (resultOfGetConfig.isOutOfRange) {
+        if (state.isOutOfRange) {
             return <>{fallback ?? <>ScreenScaler out of range</>}</>;
         }
 
-        const { zoomFactor, expectedWindowInnerWidth, expectedWindowInnerHeight } = resultOfGetConfig;
+        const { zoomFactor, targetWindowInnerWidth, targetWindowInnerHeight } = state;
 
         return (
             <div
@@ -195,8 +184,8 @@ export function createScreenScaler(
                     style={{
                         "transform": `scale(${zoomFactor})`,
                         "transformOrigin": "0 0",
-                        "width": expectedWindowInnerWidth,
-                        "height": expectedWindowInnerHeight,
+                        "width": targetWindowInnerWidth,
+                        "height": targetWindowInnerHeight,
                         "overflow": "hidden"
                     }}
                 >
