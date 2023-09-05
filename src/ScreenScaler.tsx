@@ -3,7 +3,6 @@ import { useGuaranteedMemo } from "./tools/useGuaranteedMemo";
 import { useEffect } from "react";
 import { useConst } from "./tools/useConst";
 import { assert } from "tsafe/assert";
-import { createGetRealWindowDimensions } from "./getRealWindowDimensions";
 
 export function createScreenScaler(
     expectedDimensions:
@@ -18,7 +17,31 @@ export function createScreenScaler(
 
     document.body.style.margin = "0";
 
-    const { getRealWindowDimensions } = createGetRealWindowDimensions();
+    const { getRealWindowDimensions } = (() => {
+        const createGetRealDimensionX = (dimension: "Width" | "Height"): (() => number) => {
+            const pd = Object.getOwnPropertyDescriptor(window, `inner${dimension}`);
+
+            assert(pd !== undefined);
+
+            const { get } = pd;
+
+            assert(get !== undefined);
+
+            return get.bind(window);
+        };
+
+        const getRealWindowInnerWidth = createGetRealDimensionX("Width");
+        const getRealWindowInnerHeight = createGetRealDimensionX("Height");
+
+        function getRealWindowDimensions() {
+            return {
+                "realWindowInnerWidth": getRealWindowInnerWidth(),
+                "realWindowInnerHeight": getRealWindowInnerHeight()
+            };
+        }
+
+        return { getRealWindowDimensions };
+    })();
 
     const { updateGetBoundingClientRect } = (() => {
         const realGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
