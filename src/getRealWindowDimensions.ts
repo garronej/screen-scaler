@@ -4,12 +4,6 @@ import { memoize } from "./tools/memoize";
 const createGetRealDimensionX = (dimension: "Width" | "Height"): (() => number) => {
     const pd = Object.getOwnPropertyDescriptor(window, `inner${dimension}`);
 
-    console.log({
-        dimension,
-        "prop": `inner${dimension}`,
-        pd
-    });
-
     assert(pd !== undefined);
 
     const { get } = pd;
