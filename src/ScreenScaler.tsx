@@ -16,9 +16,40 @@ export function createScreenScaler(
     const calculateExpectedDimensions =
         typeof expectedDimensions === "function" ? expectedDimensions : () => expectedDimensions;
 
+    document.body.style.margin = "0";
+
     const { getRealWindowDimensions } = createGetRealWindowDimensions();
 
-    document.body.style.margin = "0";
+    const { updateGetBoundingClientRect } = (() => {
+        const realGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+
+        let zoomFactor = 1;
+
+        //Pollute HTMLDivElement.prototype.getBoundingClientRect
+        Object.defineProperty(HTMLElement.prototype, "getBoundingClientRect", {
+            "value": function getBoundingClientRect(this: HTMLElement) {
+                const { left, top, width, height, right, bottom } = realGetBoundingClientRect.call(this);
+
+                return {
+                    "left": left / zoomFactor,
+                    "top": top / zoomFactor,
+                    "width": width / zoomFactor,
+                    "height": height / zoomFactor,
+                    "right": right / zoomFactor,
+                    "bottom": bottom / zoomFactor
+                };
+            },
+            "enumerable": true,
+            "configurable": true,
+            "writable": false
+        });
+
+        function updateGetBoundingClientRect(params: { zoomFactor: number }) {
+            zoomFactor = params.zoomFactor;
+        }
+
+        return { updateGetBoundingClientRect };
+    })();
 
     function ScreenScaler(props: { children: ReactNode; fallback?: ReactNode }) {
         const { children, fallback } = props;
@@ -81,54 +112,32 @@ export function createScreenScaler(
 
                 const zoomFactor = realWindowInnerWidth / expectedWindowInnerWidth;
 
-                refResultOfGetConfig.current = {
-                    "isOutOfRange": false,
-                    zoomFactor,
-                    expectedWindowInnerWidth,
-                    "expectedWindowInnerHeight": realWindowInnerHeight / zoomFactor
-                };
+                const expectedWindowInnerHeight = realWindowInnerHeight / zoomFactor;
 
                 //Pollute window.innerWidth and window.innerHeight
                 Object.defineProperties(window, {
                     "innerWidth": {
-                        "value": refResultOfGetConfig.current.expectedWindowInnerWidth,
+                        "value": expectedWindowInnerWidth,
                         "enumerable": true,
                         "configurable": true,
                         "writable": false
                     },
                     "innerHeight": {
-                        "value": refResultOfGetConfig.current.expectedWindowInnerHeight,
+                        "value": expectedWindowInnerHeight,
                         "enumerable": true,
                         "configurable": true,
                         "writable": false
                     }
                 });
 
-                function getBoundingClientRect(this: HTMLElement) {
-                    const { left, top, width, height, right, bottom } =
-                        getBoundingClientRect.real.call(this);
+                updateGetBoundingClientRect({ zoomFactor });
 
-                    return {
-                        "left": left / zoomFactor,
-                        "top": top / zoomFactor,
-                        "width": width / zoomFactor,
-                        "height": height / zoomFactor,
-                        "right": right / zoomFactor,
-                        "bottom": bottom / zoomFactor
-                    };
-                }
-
-                getBoundingClientRect.real =
-                    (HTMLDivElement.prototype.getBoundingClientRect as { real?: () => DOMRect }).real ??
-                    Element.prototype.getBoundingClientRect;
-
-                //Pollute HTMLDivElement.prototype.getBoundingClientRect
-                Object.defineProperty(HTMLElement.prototype, "getBoundingClientRect", {
-                    "value": getBoundingClientRect,
-                    "enumerable": true,
-                    "configurable": true,
-                    "writable": false
-                });
+                refResultOfGetConfig.current = {
+                    "isOutOfRange": false,
+                    zoomFactor,
+                    expectedWindowInnerWidth,
+                    expectedWindowInnerHeight
+                };
             }, [realWindowInnerWidth, realWindowInnerHeight]);
 
             assert(refResultOfGetConfig.current !== undefined);

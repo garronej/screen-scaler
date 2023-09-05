@@ -1,15 +1,15 @@
 import { createScreenScaler } from "react-screen-scaler";
 import { useDomRect } from "powerhooks/tools/useDomRect";
 
-/*
 const { ScreenScaler } = createScreenScaler({
     "expectedWindowInnerWidth": 1920
 });
-*/
 
+/*
 const { ScreenScaler } = createScreenScaler(
     ({ realWindowInnerWidth }) => ({ "expectedWindowInnerWidth": realWindowInnerWidth })
 );
+*/
 
 //const ScreenScaler = (props: { children: React.ReactNode }) => <>{props.children}</>;
 
