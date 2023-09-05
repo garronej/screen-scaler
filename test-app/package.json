@@ -5,6 +5,7 @@
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "powerhooks": "^0.27.0",
     "react-screen-scaler": "file:../dist"
   },
   "devDependencies": {

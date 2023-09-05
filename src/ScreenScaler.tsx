@@ -18,6 +18,8 @@ export function createScreenScaler(
 
     const { getRealWindowDimensions } = createGetRealWindowDimensions();
 
+    document.body.style.margin = "0";
+
     function ScreenScaler(props: { children: ReactNode; fallback?: ReactNode }) {
         const { children, fallback } = props;
 
@@ -39,6 +41,8 @@ export function createScreenScaler(
 
             return realWindowDimensions;
         })();
+
+        console.log({ realWindowInnerWidth });
 
         const { resultOfGetConfig } = (function useClosure() {
             const refResultOfGetConfig = useConst<{
@@ -143,7 +147,7 @@ export function createScreenScaler(
         return (
             <div
                 about={`${ScreenScaler.name} outer wrapper`}
-                style={{ "height": "100vh", "overflow": "hidden", "border": "1px solid red" }}
+                style={{ "height": "100vh", "overflow": "hidden" }}
             >
                 <div
                     about={`${ScreenScaler.name} inner wrapper`}
