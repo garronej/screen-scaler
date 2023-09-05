@@ -17,7 +17,10 @@
     <a href="https://github.com/garronej/react-screen-scaler/blob/main/LICENSE">
       <img src="https://img.shields.io/npm/l/react-screen-scaler">
     </a>
-</p>
+</p>  
+
+<img width="799" alt="image" src="https://github.com/garronej/react-screen-scaler/assets/6702424/eed06b35-bc7b-4dd9-8d3e-8c1327d6ee5a">
+
 
 > **WARNING**: This library is a work in progress, it is not ready for production use.
 
