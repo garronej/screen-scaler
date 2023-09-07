@@ -1,6 +1,6 @@
 import { type ReactNode } from "react";
 import { assert } from "tsafe/assert";
-import { Evt } from "evt";
+import { Evt, onlyIfChanged } from "evt";
 import { useRerenderOnStateChange } from "evt/hooks";
 
 export function createScreenScaler(
@@ -27,26 +27,36 @@ export function createScreenScaler(
         | { isOutOfRange: true }
     );
 
+    document.body.style.margin = "0";
+
     const evtState = Evt.from(window, "resize")
         .toStateful()
         .pipe(
             (() => {
-                const { get: innerWidthGetter } =
-                    Object.getOwnPropertyDescriptor(window, "innerWidth") ?? {};
-                const { get: innerHeightGetter } =
-                    Object.getOwnPropertyDescriptor(window, "innerHeight") ?? {};
+                const { get: clientWidthGetter } =
+                    Object.getOwnPropertyDescriptor(Element.prototype, "clientWidth") ?? {};
+                const { get: clientHeightGetter } =
+                    Object.getOwnPropertyDescriptor(Element.prototype, "clientHeight") ?? {};
 
-                assert(innerWidthGetter !== undefined);
-                assert(innerHeightGetter !== undefined);
+                assert(clientWidthGetter !== undefined);
+                assert(clientHeightGetter !== undefined);
 
                 return () => [
                     {
-                        "realWindowInnerWidth": innerWidthGetter.call(window),
-                        "realWindowInnerHeight": innerHeightGetter.call(window)
+                        //NOTE: Using document dimensions instead of windows's dimensions because on mobile
+                        // when we pinch and zoom the window's dimensions changes and we don't want to recomputes the UI
+                        // in this case, we want to enable zooming on a portion of the screen.
+                        "realWindowInnerWidth": clientWidthGetter.call(
+                            window.document.documentElement
+                        ) as number,
+                        "realWindowInnerHeight": clientHeightGetter.call(
+                            window.document.documentElement
+                        ) as number
                     }
                 ];
             })()
         )
+        .pipe(onlyIfChanged())
         .pipe(({ realWindowInnerHeight, realWindowInnerWidth }): [State] => {
             const result = calculateExpectedDimensions({
                 realWindowInnerWidth,
@@ -78,13 +88,9 @@ export function createScreenScaler(
                 }
             ];
         });
-
-    const evtStateNoPinchAndZoom = evtState
-        .toStateless()
-        .pipe(state => (window.scrollY !== 0 || window.scrollX !== 0 ? null : [state]))
-        .toStateful(evtState.state);
-
-    document.body.style.margin = "0";
+    evtState.attach(state => {
+        console.log("State changed!", JSON.stringify(state, null, 2));
+    });
 
     Object.defineProperties(window, {
         "innerWidth": {
@@ -109,27 +115,58 @@ export function createScreenScaler(
 
     // Pollute getBoundingClientRect
     {
-        const realGetBoundingClientRect = HTMLElement.prototype.getBoundingClientRect;
+        const realGetBoundingClientRect = Element.prototype.getBoundingClientRect;
 
         //Pollute HTMLDivElement.prototype.getBoundingClientRect
-        Object.defineProperty(HTMLElement.prototype, "getBoundingClientRect", {
-            "value": function getBoundingClientRect(this: HTMLElement) {
-                const { left, top, width, height, right, bottom } = realGetBoundingClientRect.call(this);
+        Object.defineProperties(Element.prototype, {
+            "getBoundingClientRect": {
+                "value": function getBoundingClientRect(this: Element) {
+                    const { left, top, width, height, right, bottom } =
+                        realGetBoundingClientRect.call(this);
 
-                const zoomFactor = evtState.state.isOutOfRange ? 1 : evtState.state.zoomFactor;
+                    const zoomFactor = evtState.state.isOutOfRange ? 1 : evtState.state.zoomFactor;
 
-                return {
-                    "left": left / zoomFactor,
-                    "top": top / zoomFactor,
-                    "width": width / zoomFactor,
-                    "height": height / zoomFactor,
-                    "right": right / zoomFactor,
-                    "bottom": bottom / zoomFactor
-                };
+                    return {
+                        "left": left / zoomFactor,
+                        "top": top / zoomFactor,
+                        "width": width / zoomFactor,
+                        "height": height / zoomFactor,
+                        "right": right / zoomFactor,
+                        "bottom": bottom / zoomFactor
+                    };
+                },
+                "enumerable": true,
+                "configurable": true,
+                "writable": false
             },
-            "enumerable": true,
-            "configurable": true,
-            "writable": false
+            "clientLeft": {
+                "get": function (this: Element) {
+                    return this.getBoundingClientRect().left;
+                },
+                "enumerable": true,
+                "configurable": true
+            },
+            "clientTop": {
+                "get": function (this: Element) {
+                    return this.getBoundingClientRect().top;
+                },
+                "enumerable": true,
+                "configurable": true
+            },
+            "clientWidth": {
+                "get": function (this: Element) {
+                    return this.getBoundingClientRect().width;
+                },
+                "enumerable": true,
+                "configurable": true
+            },
+            "clientHeight": {
+                "get": function (this: Element) {
+                    return this.getBoundingClientRect().height;
+                },
+                "enumerable": true,
+                "configurable": true
+            }
         });
     }
 
@@ -178,7 +215,7 @@ export function createScreenScaler(
 
                 this.targets.add(target);
 
-                evtStateNoPinchAndZoom.toStateless().attach(this.ctx, () => {
+                evtState.toStateless().attach(this.ctx, () => {
                     this.callback(
                         Array.from(this.targets).map(target => {
                             const contentRect = target.getBoundingClientRect();
@@ -225,9 +262,9 @@ export function createScreenScaler(
     function ScreenScaler(props: { children: ReactNode; fallback?: ReactNode }) {
         const { children, fallback } = props;
 
-        useRerenderOnStateChange(evtStateNoPinchAndZoom);
+        useRerenderOnStateChange(evtState);
 
-        const state = evtStateNoPinchAndZoom.state;
+        const state = evtState.state;
 
         if (state.isOutOfRange) {
             return <>{fallback ?? <>ScreenScaler out of range</>}</>;

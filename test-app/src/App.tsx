@@ -3,15 +3,15 @@ import { createScreenScaler } from "react-screen-scaler";
 
 import { useDomRect } from "powerhooks/tools/useDomRect";
 
-/*
 const { ScreenScaler } = createScreenScaler({
     "targetWindowInnerWidth": 1920
 });
-*/
 
+/*
 const { ScreenScaler } = createScreenScaler(
     ({ realWindowInnerWidth }) => ({ "targetWindowInnerWidth": realWindowInnerWidth })
 );
+*/
 
 /*
 const ScreenScaler = (props: { children: React.ReactNode }) => {
@@ -38,6 +38,7 @@ export function App() {
 
 }
 
+/*
 setInterval(
     () => {
 
@@ -49,3 +50,4 @@ setInterval(
     },
     5000
 );
+*/
