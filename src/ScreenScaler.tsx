@@ -9,8 +9,7 @@ export function createScreenScaler(
         | ((params: {
               realWindowInnerWidth: number;
               realWindowInnerHeight: number;
-              devicePixelRatio: number;
-              isZoomed: boolean;
+              zoomLevel: number;
           }) => { targetWindowInnerWidth: number } | undefined)
 ) {
     const calculateExpectedDimensions =
@@ -31,21 +30,53 @@ export function createScreenScaler(
 
     document.body.style.margin = "0";
 
-    const initialDevicePixelRatio = (function callee(): number {
-        const key = "initialDevicePixelRatio";
+    const { getPersistedZoomLevelState, persistZoomLevelState } = (() => {
+        const key = "screen-scaler-zoom-level";
 
-        const localStorageValue = localStorage.getItem(key);
+        type State = { devicePixelRatio: number; zoomLevel: number };
 
-        if (localStorageValue !== null) {
-            return parseFloat(localStorageValue);
+        function getPersistedZoomLevelState(): State | undefined {
+            const serializedState = localStorage.getItem(key);
+
+            if (serializedState === null) {
+                return undefined;
+            }
+
+            return JSON.parse(serializedState);
         }
 
-        localStorage.setItem(key, `${window.devicePixelRatio}`);
+        function persistZoomLevelState(state: State): void {
+            localStorage.setItem(key, JSON.stringify(state));
+        }
 
-        return callee();
+        return {
+            getPersistedZoomLevelState,
+            persistZoomLevelState
+        };
     })();
 
-    const evtState = Evt.merge([Evt.from(window, "resize"), Evt.from(window, "resize")])
+    const evtZoomLevel = Evt.from(window, "resize")
+        .toStateful()
+        .pipe([
+            (_data, prev) =>
+                prev.devicePixelRatio === devicePixelRatio
+                    ? [prev]
+                    : [
+                          {
+                              devicePixelRatio,
+                              "zoomLevel":
+                                  prev.zoomLevel + (devicePixelRatio > prev.devicePixelRatio ? 1 : -1)
+                          }
+                      ],
+
+            getPersistedZoomLevelState() ?? { devicePixelRatio, "zoomLevel": 0 }
+        ])
+        .pipe(onlyIfChanged())
+        .pipe(
+            (data, registerSideEffect) => (registerSideEffect(() => persistZoomLevelState(data)), [data])
+        )
+        .pipe(({ zoomLevel }) => [zoomLevel]);
+    const evtState = Evt.merge([Evt.from(window, "resize"), evtZoomLevel])
         .toStateful()
         .pipe(
             (() => {
@@ -68,18 +99,17 @@ export function createScreenScaler(
                         "realWindowInnerHeight": clientHeightGetter.call(
                             window.document.documentElement
                         ) as number,
-                        "devicePixelRatio": window.devicePixelRatio
+                        "zoomLevel": evtZoomLevel.state
                     }
                 ];
             })()
         )
         .pipe(onlyIfChanged())
-        .pipe(({ realWindowInnerHeight, realWindowInnerWidth, devicePixelRatio }): [State] => {
+        .pipe(({ realWindowInnerHeight, realWindowInnerWidth, zoomLevel }): [State] => {
             const result = calculateExpectedDimensions({
                 realWindowInnerWidth,
                 realWindowInnerHeight,
-                devicePixelRatio,
-                "isZoomed": devicePixelRatio !== initialDevicePixelRatio
+                zoomLevel
             });
 
             if (result === undefined) {

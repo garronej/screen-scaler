@@ -22,7 +22,7 @@ const { ScreenScaler } = createScreenScaler({
 */
 
 const { ScreenScaler } = createScreenScaler(
-    ({ realWindowInnerWidth, isZoomed }) => ({ "targetWindowInnerWidth": isZoomed ? realWindowInnerWidth : 1920 })
+    ({ zoomLevel }) => (console.log({ zoomLevel }), { "targetWindowInnerWidth": 1920 * (1 - 0.1 * zoomLevel) })
 );
 
 /*
