@@ -88,9 +88,6 @@ export function createScreenScaler(
                 }
             ];
         });
-    evtState.attach(state => {
-        console.log("State changed!", JSON.stringify(state, null, 2));
-    });
 
     Object.defineProperties(window, {
         "innerWidth": {
