@@ -1,17 +1,29 @@
-//import { useState } from "react";
+import { useState } from "react";
 import { createScreenScaler } from "react-screen-scaler";
 
 import { useDomRect } from "powerhooks/tools/useDomRect";
 
+
+
+/*
+console.log({ "window.devicePixelRatio": window.devicePixelRatio });
+
+window.addEventListener("resize", () => {
+
+    console.log({ "window.devicePixelRatio": window.devicePixelRatio });
+
+});
+*/
+
+/*
 const { ScreenScaler } = createScreenScaler({
     "targetWindowInnerWidth": 1920
 });
-
-/*
-const { ScreenScaler } = createScreenScaler(
-    ({ realWindowInnerWidth }) => ({ "targetWindowInnerWidth": realWindowInnerWidth })
-);
 */
+
+const { ScreenScaler } = createScreenScaler(
+    ({ realWindowInnerWidth, isZoomed }) => ({ "targetWindowInnerWidth": isZoomed ? realWindowInnerWidth : 1920 })
+);
 
 /*
 const ScreenScaler = (props: { children: React.ReactNode }) => {

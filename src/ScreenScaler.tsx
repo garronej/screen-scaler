@@ -9,6 +9,8 @@ export function createScreenScaler(
         | ((params: {
               realWindowInnerWidth: number;
               realWindowInnerHeight: number;
+              devicePixelRatio: number;
+              isZoomed: boolean;
           }) => { targetWindowInnerWidth: number } | undefined)
 ) {
     const calculateExpectedDimensions =
@@ -29,7 +31,21 @@ export function createScreenScaler(
 
     document.body.style.margin = "0";
 
-    const evtState = Evt.from(window, "resize")
+    const initialDevicePixelRatio = (function callee(): number {
+        const key = "initialDevicePixelRatio";
+
+        const localStorageValue = localStorage.getItem(key);
+
+        if (localStorageValue !== null) {
+            return parseFloat(localStorageValue);
+        }
+
+        localStorage.setItem(key, `${window.devicePixelRatio}`);
+
+        return callee();
+    })();
+
+    const evtState = Evt.merge([Evt.from(window, "resize"), Evt.from(window, "resize")])
         .toStateful()
         .pipe(
             (() => {
@@ -51,16 +67,19 @@ export function createScreenScaler(
                         ) as number,
                         "realWindowInnerHeight": clientHeightGetter.call(
                             window.document.documentElement
-                        ) as number
+                        ) as number,
+                        "devicePixelRatio": window.devicePixelRatio
                     }
                 ];
             })()
         )
         .pipe(onlyIfChanged())
-        .pipe(({ realWindowInnerHeight, realWindowInnerWidth }): [State] => {
+        .pipe(({ realWindowInnerHeight, realWindowInnerWidth, devicePixelRatio }): [State] => {
             const result = calculateExpectedDimensions({
                 realWindowInnerWidth,
-                realWindowInnerHeight
+                realWindowInnerHeight,
+                devicePixelRatio,
+                "isZoomed": devicePixelRatio !== initialDevicePixelRatio
             });
 
             if (result === undefined) {
