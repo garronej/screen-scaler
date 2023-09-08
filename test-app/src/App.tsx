@@ -1,4 +1,4 @@
-import { useState } from "react";
+//import { useState } from "react";
 import { createScreenScaler } from "react-screen-scaler";
 
 import { useDomRect } from "powerhooks/tools/useDomRect";
@@ -22,7 +22,7 @@ const { ScreenScaler } = createScreenScaler({
 */
 
 const { ScreenScaler } = createScreenScaler(
-    ({ zoomLevel }) => (console.log({ zoomLevel }), { "targetWindowInnerWidth": 1920 * (1 - 0.1 * zoomLevel) })
+    ({ zoomFactor }) => ({ "targetWindowInnerWidth": 1920 * zoomFactor })
 );
 
 /*

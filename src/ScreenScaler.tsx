@@ -9,7 +9,7 @@ export function createScreenScaler(
         | ((params: {
               realWindowInnerWidth: number;
               realWindowInnerHeight: number;
-              zoomLevel: number;
+              zoomFactor: number;
           }) => { targetWindowInnerWidth: number } | undefined)
 ) {
     const calculateExpectedDimensions =
@@ -21,7 +21,7 @@ export function createScreenScaler(
     } & (
         | {
               isOutOfRange: false;
-              zoomFactor: number;
+              scaleFactor: number;
               targetWindowInnerWidth: number;
               targetWindowInnerHeight: number;
           }
@@ -55,7 +55,7 @@ export function createScreenScaler(
         };
     })();
 
-    const evtZoomLevel = Evt.from(window, "resize")
+    const evtZoomFactor = Evt.from(window, "resize")
         .toStateful()
         .pipe([
             (_data, prev) =>
@@ -75,8 +75,50 @@ export function createScreenScaler(
         .pipe(
             (data, registerSideEffect) => (registerSideEffect(() => persistZoomLevelState(data)), [data])
         )
-        .pipe(({ zoomLevel }) => [zoomLevel]);
-    const evtState = Evt.merge([Evt.from(window, "resize"), evtZoomLevel])
+        .pipe(({ zoomLevel }) => [
+            1 /
+                (() => {
+                    switch (Math.max(-7, Math.min(9, zoomLevel))) {
+                        case -7:
+                            return 0.25;
+                        case -6:
+                            return 0.33;
+                        case -5:
+                            return 0.5;
+                        case -4:
+                            return 0.66;
+                        case -3:
+                            return 0.75;
+                        case -2:
+                            return 0.8;
+                        case -1:
+                            return 0.9;
+                        case 0:
+                            return 1;
+                        case 1:
+                            return 1.1;
+                        case 2:
+                            return 1.25;
+                        case 3:
+                            return 1.5;
+                        case 4:
+                            return 1.75;
+                        case 5:
+                            return 2;
+                        case 6:
+                            return 2.5;
+                        case 7:
+                            return 3;
+                        case 8:
+                            return 4;
+                        case 9:
+                            return 5;
+                    }
+                    assert(false);
+                })()
+        ]);
+
+    const evtState = Evt.merge([Evt.from(window, "resize"), evtZoomFactor])
         .toStateful()
         .pipe(
             (() => {
@@ -99,17 +141,17 @@ export function createScreenScaler(
                         "realWindowInnerHeight": clientHeightGetter.call(
                             window.document.documentElement
                         ) as number,
-                        "zoomLevel": evtZoomLevel.state
+                        "zoomFactor": evtZoomFactor.state
                     }
                 ];
             })()
         )
         .pipe(onlyIfChanged())
-        .pipe(({ realWindowInnerHeight, realWindowInnerWidth, zoomLevel }): [State] => {
+        .pipe(({ realWindowInnerHeight, realWindowInnerWidth, zoomFactor }): [State] => {
             const result = calculateExpectedDimensions({
                 realWindowInnerWidth,
                 realWindowInnerHeight,
-                zoomLevel
+                zoomFactor
             });
 
             if (result === undefined) {
@@ -124,14 +166,14 @@ export function createScreenScaler(
 
             const { targetWindowInnerWidth } = result;
 
-            const zoomFactor = realWindowInnerWidth / targetWindowInnerWidth;
+            const scaleFactor = realWindowInnerWidth / targetWindowInnerWidth;
 
             return [
                 {
                     "isOutOfRange": false,
-                    zoomFactor,
+                    scaleFactor,
                     targetWindowInnerWidth,
-                    "targetWindowInnerHeight": realWindowInnerHeight / zoomFactor,
+                    "targetWindowInnerHeight": realWindowInnerHeight / scaleFactor,
                     realWindowInnerHeight,
                     realWindowInnerWidth
                 }
@@ -170,15 +212,15 @@ export function createScreenScaler(
                     const { left, top, width, height, right, bottom } =
                         realGetBoundingClientRect.call(this);
 
-                    const zoomFactor = evtState.state.isOutOfRange ? 1 : evtState.state.zoomFactor;
+                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
                     return {
-                        "left": left / zoomFactor,
-                        "top": top / zoomFactor,
-                        "width": width / zoomFactor,
-                        "height": height / zoomFactor,
-                        "right": right / zoomFactor,
-                        "bottom": bottom / zoomFactor
+                        "left": left / scaleFactor,
+                        "top": top / scaleFactor,
+                        "width": width / scaleFactor,
+                        "height": height / scaleFactor,
+                        "right": right / scaleFactor,
+                        "bottom": bottom / scaleFactor
                     };
                 },
                 "enumerable": true,
@@ -230,15 +272,15 @@ export function createScreenScaler(
             "get": function (this: ResizeObserverEntry) {
                 const { left, top, width, height, right, bottom } = realContentRectGetter.call(this);
 
-                const zoomFactor = evtState.state.isOutOfRange ? 1 : evtState.state.zoomFactor;
+                const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
                 return {
-                    "left": left / zoomFactor,
-                    "top": top / zoomFactor,
-                    "width": width / zoomFactor,
-                    "height": height / zoomFactor,
-                    "right": right / zoomFactor,
-                    "bottom": bottom / zoomFactor
+                    "left": left / scaleFactor,
+                    "top": top / scaleFactor,
+                    "width": width / scaleFactor,
+                    "height": height / scaleFactor,
+                    "right": right / scaleFactor,
+                    "bottom": bottom / scaleFactor
                 };
             }
         });
@@ -316,7 +358,7 @@ export function createScreenScaler(
             return <>{fallback ?? <>ScreenScaler out of range</>}</>;
         }
 
-        const { zoomFactor, targetWindowInnerWidth, targetWindowInnerHeight } = state;
+        const { scaleFactor, targetWindowInnerWidth, targetWindowInnerHeight } = state;
 
         return (
             <div
@@ -326,7 +368,7 @@ export function createScreenScaler(
                 <div
                     about={`${ScreenScaler.name} inner wrapper`}
                     style={{
-                        "transform": `scale(${zoomFactor})`,
+                        "transform": `scale(${scaleFactor})`,
                         "transformOrigin": "0 0",
                         "width": targetWindowInnerWidth,
                         "height": targetWindowInnerHeight,
