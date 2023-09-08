@@ -3,21 +3,25 @@ import { assert } from "tsafe/assert";
 import { Evt, onlyIfChanged } from "evt";
 import { useRerenderOnStateChange } from "evt/hooks";
 
-export function createScreenScaler(
-    expectedDimensions:
-        | { targetWindowInnerWidth: number }
+export function createScreenScaler(params: {
+    targetWindowInnerWidth:
+        | (number | undefined)
         | ((params: {
-              realWindowInnerWidth: number;
-              realWindowInnerHeight: number;
+              actualWindowInnerWidth: number;
+              actualWindowInnerHeight: number;
               zoomFactor: number;
-          }) => { targetWindowInnerWidth: number } | undefined)
-) {
-    const calculateExpectedDimensions =
-        typeof expectedDimensions === "function" ? expectedDimensions : () => expectedDimensions;
+              isPortraitOrientation: boolean;
+          }) => number | undefined);
+}) {
+    const getTargetWindowInnerWidth = (() => {
+        const { targetWindowInnerWidth: param } = params;
+
+        return typeof param === "function" ? param : () => param;
+    })();
 
     type State = {
-        realWindowInnerHeight: number;
-        realWindowInnerWidth: number;
+        actualWindowInnerHeight: number;
+        actualWindowInnerWidth: number;
     } & (
         | {
               isOutOfRange: false;
@@ -135,10 +139,10 @@ export function createScreenScaler(
                         //NOTE: Using document dimensions instead of windows's dimensions because on mobile
                         // when we pinch and zoom the window's dimensions changes and we don't want to recomputes the UI
                         // in this case, we want to enable zooming on a portion of the screen.
-                        "realWindowInnerWidth": clientWidthGetter.call(
+                        "actualWindowInnerWidth": clientWidthGetter.call(
                             window.document.documentElement
                         ) as number,
-                        "realWindowInnerHeight": clientHeightGetter.call(
+                        "actualWindowInnerHeight": clientHeightGetter.call(
                             window.document.documentElement
                         ) as number,
                         "zoomFactor": evtZoomFactor.state
@@ -147,35 +151,38 @@ export function createScreenScaler(
             })()
         )
         .pipe(onlyIfChanged())
-        .pipe(({ realWindowInnerHeight, realWindowInnerWidth, zoomFactor }): [State] => {
-            const result = calculateExpectedDimensions({
-                realWindowInnerWidth,
-                realWindowInnerHeight,
-                zoomFactor
+        .pipe(({ actualWindowInnerHeight, actualWindowInnerWidth, zoomFactor }): [State] => {
+            const targetWindowInnerWidth = getTargetWindowInnerWidth({
+                actualWindowInnerWidth,
+                actualWindowInnerHeight,
+                zoomFactor,
+                "isPortraitOrientation": (() => {
+                    const isPortraitOrientation = actualWindowInnerWidth * 1.3 < actualWindowInnerHeight;
+
+                    return isPortraitOrientation;
+                })()
             });
 
-            if (result === undefined) {
+            if (targetWindowInnerWidth === undefined) {
                 return [
                     {
                         "isOutOfRange": true,
-                        realWindowInnerHeight,
-                        realWindowInnerWidth
+                        actualWindowInnerHeight,
+                        actualWindowInnerWidth
                     }
                 ];
             }
 
-            const { targetWindowInnerWidth } = result;
-
-            const scaleFactor = realWindowInnerWidth / targetWindowInnerWidth;
+            const scaleFactor = actualWindowInnerWidth / targetWindowInnerWidth;
 
             return [
                 {
                     "isOutOfRange": false,
                     scaleFactor,
                     targetWindowInnerWidth,
-                    "targetWindowInnerHeight": realWindowInnerHeight / scaleFactor,
-                    realWindowInnerHeight,
-                    realWindowInnerWidth
+                    "targetWindowInnerHeight": actualWindowInnerHeight / scaleFactor,
+                    actualWindowInnerHeight,
+                    actualWindowInnerWidth
                 }
             ];
         });
@@ -184,7 +191,7 @@ export function createScreenScaler(
         "innerWidth": {
             "get": () =>
                 evtState.state.isOutOfRange
-                    ? evtState.state.realWindowInnerWidth
+                    ? evtState.state.actualWindowInnerWidth
                     : evtState.state.targetWindowInnerWidth,
             "set": undefined,
             "enumerable": true,
@@ -193,7 +200,7 @@ export function createScreenScaler(
         "innerHeight": {
             "get": () =>
                 evtState.state.isOutOfRange
-                    ? evtState.state.realWindowInnerHeight
+                    ? evtState.state.actualWindowInnerHeight
                     : evtState.state.targetWindowInnerHeight,
             "set": undefined,
             "enumerable": true,

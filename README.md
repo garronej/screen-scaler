@@ -17,10 +17,9 @@
     <a href="https://github.com/garronej/react-screen-scaler/blob/main/LICENSE">
       <img src="https://img.shields.io/npm/l/react-screen-scaler">
     </a>
-</p>  
+</p>
 
 <img width="799" alt="image" src="https://github.com/garronej/react-screen-scaler/assets/6702424/eed06b35-bc7b-4dd9-8d3e-8c1327d6ee5a">
-
 
 > **WARNING**: This library is a work in progress, it is not ready for production use.
 
@@ -36,7 +35,50 @@ React-ScreenScaler is a tool specifically designed for developers who build web 
 
 -   This library only works with Single Page Applications (SPA) using React.
 -   Server-side rendering is not supported.
-    The use of "vh" and "vw" CSS properties is not supported.
+    The use of "vh" and "vw" CSS properties is not supported because they can't be override.
+
+## Usage
+
+Make it so that your app is always rendered as if the user had a screen resolution width of 1920.
+
+```tsx
+import { createScreenScaler } from "react-screen-scaler";
+
+const { ScreenScaler } = createScreenScaler({
+    // The zoom factor if for supporting when the use zooms in or out (ctrl + mouse wheel or ⌘ + '+' or ⌘ + '-') ...
+    targetWindowInnerWidth: ({ zoomFactor }) => 1920 * zoomFactor
+
+    // If you don't want to enable your user to zoom at all you can provide an absolute value
+    //targetWindowInnerWidth: 1920
+});
+
+export function App() {
+    return <ScreenScaler>{/* Your app here */}</ScreenScaler>;
+}
+```
+
+### Workaround for portrait mode
+
+When your app is rendered in a device in portrait mode, if you haven't accommodated for this your
+app will appear very tiny at the top of the screen and most of the screen will be unused.
+
+In this case, you have two options:
+
+1: Implement a portrait mode version of your app.
+2: Tell your user to rotate their device:
+
+```tsx
+import { createScreenScaler } from "react-screen-scaler";
+
+const { ScreenScaler } = createScreenScaler({
+    targetWindowInnerWidth: ({ zoomFactor, isPortraitOrientation }) =>
+        isPortraitOrientation ? undefined : 1920 * zoomFactor
+});
+
+export function App() {
+    return <ScreenScaler fallback={<h1>Rotate your phone</h1>}>{/* Your app here */}</ScreenScaler>;
+}
+```
 
 ## Contributing
 
