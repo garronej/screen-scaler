@@ -300,6 +300,41 @@ export function enableScreenScaler(params: {
         });
     }
 
+    // Pollute the mouse event
+    {
+        const { get: realClientXGetter } =
+            Object.getOwnPropertyDescriptor(MouseEvent.prototype, "clientX") ?? {};
+
+        const { get: realClientYGetter } =
+            Object.getOwnPropertyDescriptor(MouseEvent.prototype, "clientY") ?? {};
+
+        assert(realClientXGetter !== undefined);
+        assert(realClientYGetter !== undefined);
+
+        Object.defineProperties(MouseEvent.prototype, {
+            "clientX": {
+                "get": function (this: MouseEvent) {
+                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+
+                    return realClientXGetter.call(this) / scaleFactor;
+                },
+                "configurable": true,
+                "enumerable": true,
+                "set": undefined
+            },
+            "clientY": {
+                "get": function (this: MouseEvent) {
+                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+
+                    return realClientYGetter.call(this) / scaleFactor;
+                },
+                "configurable": true,
+                "enumerable": true,
+                "set": undefined
+            }
+        });
+    }
+
     {
         const RealResizeObserver = window.ResizeObserver;
 
