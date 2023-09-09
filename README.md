@@ -21,8 +21,6 @@
 
 <img width="799" alt="image" src="https://github.com/garronej/react-screen-scaler/assets/6702424/eed06b35-bc7b-4dd9-8d3e-8c1327d6ee5a">
 
-> **WARNING**: This library is a work in progress, it is not ready for production use.
-
 React-ScreenScaler is a tool specifically designed for developers who build web applications targeting a specific user base with uniform screen resolutions. This library helps you create applications on a defined screen resolution and takes care of scaling, either by stretching or shrinking, to accommodate deviations.
 
 ## Features

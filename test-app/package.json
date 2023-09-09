@@ -3,17 +3,20 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@emotion/react": "^11.11.1",
+    "@emotion/styled": "^11.11.0",
+    "@mui/material": "^5.14.8",
+    "powerhooks": "^0.27.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "powerhooks": "^0.27.0",
     "react-screen-scaler": "file:../dist"
   },
   "devDependencies": {
-    "react-scripts": "5.0.1",
-    "typescript": "^4.9.5",
     "@types/node": "^16.18.39",
     "@types/react": "^18.2.16",
-    "@types/react-dom": "^18.2.7"
+    "@types/react-dom": "^18.2.7",
+    "react-scripts": "5.0.1",
+    "typescript": "^4.9.5"
   },
   "scripts": {
     "start": "react-scripts start",

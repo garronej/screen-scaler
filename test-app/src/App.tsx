@@ -1,30 +1,109 @@
 import { createScreenScaler } from "react-screen-scaler";
+import { useDomRect } from "powerhooks/tools/useDomRect";
+//import { BasicSelect } from "./BasicSelect";
+//import { GetBoundingClientRectTest } from "./GetBoundingClientRectTest";
+//import Button from "@mui/material/Button";
 
 const { ScreenScaler } = createScreenScaler({
-    "targetWindowInnerWidth": ({ zoomFactor, isPortraitOrientation })=> 
-        isPortraitOrientation ? 
-            undefined : 
+    "targetWindowInnerWidth": ({ zoomFactor, isPortraitOrientation }) =>
+        isPortraitOrientation ?
+            undefined :
             1920 * zoomFactor,
 });
 
+
+/*
+const ScreenScaler = (params: { children: any, fallback: any }) => {
+    return <div style={{ height: "100vh" }}>{params.children}</div>
+}
+*/
+
 export function App() {
+
+    const { ref, domRect } = useDomRect();
+
+    console.log(domRect.width);
+
     return (
         <ScreenScaler
             fallback={<h1>Rotate your phone</h1>}
         >
-            <h1>Hello World</h1>
-            <p>
-                Lorem ipsum dolor sit amet consectetur adipi sicing elit. Quisquam
-                voluptates, quibusdam, quos, quas voluptatum quia quod quae
-                voluptatibus quidem quae voluptates, quibusdam, quos, quas
-                voluptatum quia quod quae voluptatibus quidem quae voluptates,
-                quibusdam, quos, quas voluptatum quia quod quae voluptatibus
-                quidem quae voluptates, quibusdam, quos, quas voluptatum quia quod
-                quae voluptatibus quidem quae voluptates, quibusdam, quos, quas
-                voluptatum quia quod quae voluptatibus quidem quae voluptates,
-                quibusdam, quos, quas voluptatum quia quod quae voluptatibus
-                quidem quae voluptates, quibusdam, quos, quas voluptatum quia quod
-            </p>
+            <div ref={ref} style={{
+                height: "100%",
+                backgroundColor: "pink",
+                boxSizing: "border-box",
+                display: "flex",
+                flexDirection: "column",
+            }}>
+                <header
+                    style={{
+                        height: 100,
+                        backgroundColor: "#333",
+                        color: "#FFF",
+                    }}
+                >
+                    Header
+                </header>
+                <main style={{
+                    flex: 1,
+                    display: "flex",
+                    overflow: "hidden"
+                }}>
+                    <aside style={{
+                        backgroundColor: "#555",
+                        color: "#FFF",
+                        width: "10%",
+                    }}>
+                        <a href="https://example.com" style={{color: '#AAA'}}>Item 1: foo bar baz hello</a><br/>
+                        <a href="https://example.com" style={{color: '#AAA'}}>Item 2: world foo bar baz</a><br/>
+                    </aside>
+                    <article style={{
+                        backgroundColor: "#f4f4f4",
+                        flex: 1,
+                    }}>
+                        {/* a grid layout 3 x 3 that uses all the space */}
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr 1fr',
+                            gap: '0px 0px',
+                            height: '100%',
+                        }}>
+                            {
+                                new Array(9).fill(null).map((_, index) => (
+                                    <div key={index} style={{
+                                        border: '1px solid #CCC',
+                                        padding: 10,
+                                        overflow: "visible"
+                                    }}>
+                                        <h2 style={{color: '#333'}}>Card {index}</h2>
+                                        {/*<BasicSelect />*/}
+                                        {/*<Button variant="contained">Contained</Button>*/}
+                                        {/*index === 0 && <GetBoundingClientRectTest />*/}
+                                        <p style={{color: '#333'}}>
+                                            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec euismod, nisl eget
+                                            consequat aliquam, nunc nisl aliquet nunc, vitae aliquam nisl nunc vitae nisl.
+                                            Nullam euismod, nisl eget consequat aliquam, nunc nisl aliquet nunc, vitae aliquam
+                                            nisl nunc vitae nisl. Nullam euismod, nisl eget consequat aliquam, nunc nisl
+                                            aliquet nunc, vitae aliquam nisl nunc vitae nisl. Nullam euismod, nisl eget
+                                            consequat aliquam, nunc nisl aliquet nunc, vitae aliquam nisl nunc vitae nisl.
+                                        </p>
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    </article>
+                </main>
+                <footer style={{
+                    height: 50,
+                    backgroundColor: "#333",
+                    color: "#FFF"
+                }}>
+                    Footer
+                </footer>
+
+
+            </div>
+
         </ScreenScaler>
     );
 

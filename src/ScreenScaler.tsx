@@ -221,6 +221,8 @@ export function createScreenScaler(params: {
 
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
+                    console.log("never!");
+
                     return {
                         "left": left / scaleFactor,
                         "top": top / scaleFactor,
