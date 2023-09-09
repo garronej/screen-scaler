@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type ReactNode, type ElementRef } from "react";
 import { assert } from "tsafe/assert";
 import { Evt, onlyIfChanged } from "evt";
 import { useRerenderOnStateChange } from "evt/hooks";
@@ -354,6 +354,26 @@ export function createScreenScaler(params: {
         window.ResizeObserver = CustomResizeObserver;
     }
 
+    const evtInnerNodeElement = Evt.create<ElementRef<"div"> | undefined>(undefined);
+
+    // NOTE: Detach anything that is mounted outside of our wrapper and put it inside.
+    // Useful for example with MUI popover menus that are automatically mounted at root.
+    new MutationObserver(mutations =>
+        mutations.forEach(mutation =>
+            mutation.addedNodes.forEach(async node => {
+                if (!(node instanceof Node) || node.parentNode !== document.body) {
+                    return;
+                }
+
+                const innerNodeElement =
+                    evtInnerNodeElement.state ??
+                    (await evtInnerNodeElement.waitFor(e => (e === undefined ? null : [e])));
+
+                innerNodeElement.appendChild(node);
+            })
+        )
+    ).observe(document.body, { "childList": true });
+
     function ScreenScaler(props: { children: ReactNode; fallback?: ReactNode }) {
         const { children, fallback } = props;
 
@@ -381,6 +401,7 @@ export function createScreenScaler(params: {
                         "height": targetWindowInnerHeight,
                         "overflow": "hidden"
                     }}
+                    ref={innerNodeElement => (evtInnerNodeElement.state = innerNodeElement ?? undefined)}
                 >
                     {children}
                 </div>
