@@ -1,9 +1,7 @@
-import { type ReactNode, type ElementRef } from "react";
 import { assert } from "tsafe/assert";
 import { Evt, onlyIfChanged } from "evt";
-import { useRerenderOnStateChange } from "evt/hooks";
 
-export function createScreenScaler(params: {
+export function enableScreenScaler(params: {
     targetWindowInnerWidth:
         | (number | undefined)
         | ((params: {
@@ -354,60 +352,26 @@ export function createScreenScaler(params: {
         window.ResizeObserver = CustomResizeObserver;
     }
 
-    const evtInnerNodeElement = Evt.create<ElementRef<"div"> | undefined>(undefined);
+    document.documentElement.style.height = "100vh";
+    document.documentElement.style.overflow = "hidden";
 
-    // NOTE: Detach anything that is mounted outside of our wrapper and put it inside.
-    // Useful for example with MUI popover menus that are automatically mounted at root.
-    new MutationObserver(mutations =>
-        mutations.forEach(mutation =>
-            mutation.addedNodes.forEach(async node => {
-                if (!(node instanceof Node) || node.parentNode !== document.body) {
-                    return;
-                }
+    {
+        const rootElement = document.body.querySelector(" #root, #app");
 
-                const innerNodeElement =
-                    evtInnerNodeElement.state ??
-                    (await evtInnerNodeElement.waitFor(e => (e === undefined ? null : [e])));
-
-                innerNodeElement.appendChild(node);
-            })
-        )
-    ).observe(document.body, { "childList": true });
-
-    function ScreenScaler(props: { children: ReactNode; fallback?: ReactNode }) {
-        const { children, fallback } = props;
-
-        useRerenderOnStateChange(evtState);
-
-        const state = evtState.state;
-
-        if (state.isOutOfRange) {
-            return <>{fallback ?? <>ScreenScaler out of range</>}</>;
+        if (rootElement instanceof HTMLElement) {
+            rootElement.style.height = "100%";
         }
-
-        const { scaleFactor, targetWindowInnerWidth, targetWindowInnerHeight } = state;
-
-        return (
-            <div
-                about={`${ScreenScaler.name} outer wrapper`}
-                style={{ "height": "100vh", "overflow": "hidden" }}
-            >
-                <div
-                    about={`${ScreenScaler.name} inner wrapper`}
-                    style={{
-                        "transform": `scale(${scaleFactor})`,
-                        "transformOrigin": "0 0",
-                        "width": targetWindowInnerWidth,
-                        "height": targetWindowInnerHeight,
-                        "overflow": "hidden"
-                    }}
-                    ref={innerNodeElement => (evtInnerNodeElement.state = innerNodeElement ?? undefined)}
-                >
-                    {children}
-                </div>
-            </div>
-        );
     }
 
-    return { ScreenScaler };
+    evtState.attach(state => {
+        if (state.isOutOfRange) {
+            return;
+        }
+
+        document.body.style.transform = `scale(${state.scaleFactor})`;
+        document.body.style.transformOrigin = "0 0";
+        document.body.style.width = `${state.targetWindowInnerWidth}px`;
+        document.body.style.height = `${state.targetWindowInnerHeight}px`;
+        document.body.style.overflow = "hidden";
+    });
 }

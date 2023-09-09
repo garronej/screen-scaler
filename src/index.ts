@@ -1,1 +1,1 @@
-export * from "./ScreenScaler";
+export * from "./screenScaler";

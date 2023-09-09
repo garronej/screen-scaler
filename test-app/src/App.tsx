@@ -1,22 +1,16 @@
-import { createScreenScaler } from "react-screen-scaler";
+import { enableScreenScaler } from "react-screen-scaler";
 import { useDomRect } from "powerhooks/tools/useDomRect";
-//import { BasicSelect } from "./BasicSelect";
+import { BasicSelect } from "./BasicSelect";
 //import { GetBoundingClientRectTest } from "./GetBoundingClientRectTest";
-//import Button from "@mui/material/Button";
+import Button from "@mui/material/Button";
+//import "./main.css";
 
-const { ScreenScaler } = createScreenScaler({
+enableScreenScaler({
     "targetWindowInnerWidth": ({ zoomFactor, isPortraitOrientation }) =>
         isPortraitOrientation ?
             undefined :
             1920 * zoomFactor,
 });
-
-
-/*
-const ScreenScaler = (params: { children: any, fallback: any }) => {
-    return <div style={{ height: "100vh" }}>{params.children}</div>
-}
-*/
 
 export function App() {
 
@@ -25,9 +19,6 @@ export function App() {
     console.log(domRect.width);
 
     return (
-        <ScreenScaler
-            fallback={<h1>Rotate your phone</h1>}
-        >
             <div ref={ref} style={{
                 height: "100%",
                 backgroundColor: "pink",
@@ -64,20 +55,20 @@ export function App() {
                         {/* a grid layout 3 x 3 that uses all the space */}
                         <div style={{
                             display: 'grid',
-                            gridTemplateColumns: '1fr 1fr 1fr',
+                            gridTemplateColumns: '1fr 1fr',
                             gap: '0px 0px',
                             height: '100%',
                         }}>
                             {
-                                new Array(9).fill(null).map((_, index) => (
+                                new Array(4).fill(null).map((_, index) => (
                                     <div key={index} style={{
                                         border: '1px solid #CCC',
                                         padding: 10,
                                         overflow: "visible"
                                     }}>
                                         <h2 style={{color: '#333'}}>Card {index}</h2>
-                                        {/*<BasicSelect />*/}
-                                        {/*<Button variant="contained">Contained</Button>*/}
+                                        <BasicSelect />
+                                        <Button variant="contained">Contained</Button>
                                         {/*index === 0 && <GetBoundingClientRectTest />*/}
                                         <p style={{color: '#333'}}>
                                             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec euismod, nisl eget
@@ -103,8 +94,6 @@ export function App() {
 
 
             </div>
-
-        </ScreenScaler>
     );
 
 }
