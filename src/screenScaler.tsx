@@ -120,35 +120,44 @@ export function enableScreenScaler(params: {
                 })()
         ]);
 
-    const evtState = Evt.merge([Evt.from(window, "resize"), evtZoomFactor])
+    const { evtActualWindowInnerWidth } = (() => {
+        const { get: clientWidthGetter } =
+            Object.getOwnPropertyDescriptor(Element.prototype, "clientWidth") ?? {};
+        const { get: clientHeightGetter } =
+            Object.getOwnPropertyDescriptor(Element.prototype, "clientHeight") ?? {};
+
+        assert(clientWidthGetter !== undefined);
+        assert(clientHeightGetter !== undefined);
+
+        const evtActualWindowInnerWidth = Evt.from(window, "resize")
+            .toStateful()
+            .pipe(() => [
+                {
+                    //NOTE: Using document dimensions instead of windows's dimensions because on mobile
+                    // when we pinch and zoom the window's dimensions changes and we don't want to recomputes the UI
+                    // in this case, we want to enable zooming on a portion of the screen.
+                    "actualWindowInnerWidth": clientWidthGetter.call(
+                        window.document.documentElement
+                    ) as number,
+                    "actualWindowInnerHeight": clientHeightGetter.call(
+                        window.document.documentElement
+                    ) as number,
+                    "zoomFactor": evtZoomFactor.state
+                }
+            ])
+            .pipe(onlyIfChanged());
+
+        return { evtActualWindowInnerWidth };
+    })();
+
+    const evtState = Evt.merge([evtActualWindowInnerWidth, evtZoomFactor])
         .toStateful()
-        .pipe(
-            (() => {
-                const { get: clientWidthGetter } =
-                    Object.getOwnPropertyDescriptor(Element.prototype, "clientWidth") ?? {};
-                const { get: clientHeightGetter } =
-                    Object.getOwnPropertyDescriptor(Element.prototype, "clientHeight") ?? {};
-
-                assert(clientWidthGetter !== undefined);
-                assert(clientHeightGetter !== undefined);
-
-                return () => [
-                    {
-                        //NOTE: Using document dimensions instead of windows's dimensions because on mobile
-                        // when we pinch and zoom the window's dimensions changes and we don't want to recomputes the UI
-                        // in this case, we want to enable zooming on a portion of the screen.
-                        "actualWindowInnerWidth": clientWidthGetter.call(
-                            window.document.documentElement
-                        ) as number,
-                        "actualWindowInnerHeight": clientHeightGetter.call(
-                            window.document.documentElement
-                        ) as number,
-                        "zoomFactor": evtZoomFactor.state
-                    }
-                ];
-            })()
-        )
-        .pipe(onlyIfChanged())
+        .pipe(() => [
+            {
+                ...evtActualWindowInnerWidth.state,
+                "zoomFactor": evtZoomFactor.state
+            }
+        ])
         .pipe(({ actualWindowInnerHeight, actualWindowInnerWidth, zoomFactor }): [State] => {
             const targetWindowInnerWidth = getTargetWindowInnerWidth({
                 actualWindowInnerWidth,
