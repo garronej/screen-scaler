@@ -210,6 +210,8 @@ export function enableScreenScaler(params: {
             ])
             .pipe(onlyIfChanged());
 
+        evtActualWindowInnerWidth.toStateless().attach(() => window.dispatchEvent(new Event("resize")));
+
         return { evtActualWindowInnerWidth };
     })();
 

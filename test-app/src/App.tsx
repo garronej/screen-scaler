@@ -45,7 +45,7 @@ export function App() {
                 <aside style={{
                     backgroundColor: "#555",
                     color: "#FFF",
-                    width: "10%",
+                    width: "20%",
                 }}>
                     <a href="https://example.com" style={{ color: '#AAA' }}>Item 1: foo bar baz hello</a><br />
                     <a href="https://example.com" style={{ color: '#AAA' }}>Item 2: world foo bar baz</a><br />
