@@ -1,7 +1,4 @@
 <p align="center">
-    <img src="https://user-images.githubusercontent.com/6702424/80216211-00ef5280-863e-11ea-81de-59f3a3d4b8e4.png">  
-</p>
-<p align="center">
     <i>One-size-fit-all web design: Screen-size agnostic development experience.</i>
     <br>
     <br>
@@ -17,7 +14,9 @@
     <a href="https://github.com/garronej/screen-scaler/blob/main/LICENSE">
       <img src="https://img.shields.io/npm/l/screen-scaler">
     </a>
-</p>
+</p>  
+
+https://github.com/garronej/react-screen-scaler/assets/6702424/b5f7020f-97cc-4afd-9a12-01fafc4deac8
 
 ## Motivation
 
