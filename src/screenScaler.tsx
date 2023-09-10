@@ -13,6 +13,7 @@ export function enableScreenScaler(params: {
               zoomFactor: number;
               isPortraitOrientation: boolean;
           }) => number | undefined);
+    rootDivId: string;
 }): {
     disableScreenScaler: () => void;
 } {
@@ -26,16 +27,12 @@ export function enableScreenScaler(params: {
         return typeof param === "function" ? param : () => param;
     })();
 
+    const { rootDivId } = params;
+
     {
-        const { rootElement } = (() => {
-            let rootElement = document.body.querySelector(" #root, #app") ?? undefined;
+        const rootElement = document.getElementById(rootDivId);
 
-            if (!(rootElement instanceof HTMLElement)) {
-                rootElement = undefined;
-            }
-
-            return { rootElement };
-        })();
+        assert(rootElement !== null);
 
         const initialStyles = {
             "body": {
@@ -54,7 +51,8 @@ export function enableScreenScaler(params: {
                 rootElement === undefined
                     ? undefined
                     : {
-                          "height": rootElement.style.height
+                          "height": rootElement.style.height,
+                          "overflow": rootElement.style.overflow
                       }
         };
 
@@ -67,7 +65,11 @@ export function enableScreenScaler(params: {
                 "getBoundingClientRect": getOwnPropertyDescriptor(
                     Element.prototype,
                     "getBoundingClientRect"
-                )
+                ),
+                "clientLeft": getOwnPropertyDescriptor(Element.prototype, "clientLeft"),
+                "clientTop": getOwnPropertyDescriptor(Element.prototype, "clientTop"),
+                "clientWidth": getOwnPropertyDescriptor(Element.prototype, "clientWidth"),
+                "clientHeight": getOwnPropertyDescriptor(Element.prototype, "clientHeight")
             },
             "ResizeObserverEntry.prototype": {
                 "contentRect": getOwnPropertyDescriptor(ResizeObserverEntry.prototype, "contentRect")
@@ -81,34 +83,23 @@ export function enableScreenScaler(params: {
         const RealResizeObserver = window.ResizeObserver;
 
         ctx.evtDoneOrAborted.attachOnce(() => {
-            Object.defineProperties(window, {
-                "innerWidth": propertyDescriptors.window.innerWidth,
-                "innerHeight": propertyDescriptors.window.innerHeight
-            });
+            Object.defineProperties(window, propertyDescriptors.window);
 
-            Object.defineProperties(Element.prototype, {
-                "getBoundingClientRect": propertyDescriptors["Element.prototype"].getBoundingClientRect
-            });
-
+            Object.defineProperties(Element.prototype, propertyDescriptors["Element.prototype"]);
             Object.defineProperty(
                 ResizeObserverEntry.prototype,
                 "contentRect",
                 propertyDescriptors["ResizeObserverEntry.prototype"].contentRect
             );
 
-            Object.defineProperties(MouseEvent.prototype, {
-                "clientX": propertyDescriptors["MouseEvent.prototype"].clientX,
-                "clientY": propertyDescriptors["MouseEvent.prototype"].clientY
-            });
+            Object.defineProperties(MouseEvent.prototype, propertyDescriptors["MouseEvent.prototype"]);
 
             window.ResizeObserver = RealResizeObserver;
 
             Object.assign(document.body.style, initialStyles.body);
             Object.assign(document.documentElement.style, initialStyles.html);
 
-            if (rootElement !== undefined) {
-                Object.assign(rootElement.style, initialStyles.root);
-            }
+            Object.assign(rootElement.style, initialStyles.root);
         });
     }
 
@@ -193,6 +184,11 @@ export function enableScreenScaler(params: {
     const { evtActualWindowInnerWidth } = (() => {
         const { get: clientWidthGetter } =
             Object.getOwnPropertyDescriptor(Element.prototype, "clientWidth") ?? {};
+
+        if ((window as any)["clientWidthGetter"] === undefined) {
+            (window as any)["clientWidthGetter"] = clientWidthGetter;
+        }
+
         const { get: clientHeightGetter } =
             Object.getOwnPropertyDescriptor(Element.prototype, "clientHeight") ?? {};
 
@@ -470,18 +466,18 @@ export function enableScreenScaler(params: {
     document.documentElement.style.overflow = "hidden";
 
     {
-        const rootElement = document.body.querySelector(" #root, #app");
+        const rootElement = document.getElementById(rootDivId);
 
-        if (rootElement instanceof HTMLElement) {
-            rootElement.style.height = "100%";
-        }
+        assert(rootElement !== null);
+
+        rootElement.style.height = "100%";
+        rootElement.style.overflow = "auto";
     }
 
     evtState.attach(state => {
         if (state.isOutOfRange) {
             return;
         }
-
         document.body.style.transform = `scale(${state.scaleFactor})`;
         document.body.style.transformOrigin = "0 0";
         document.body.style.width = `${state.targetWindowInnerWidth}px`;
