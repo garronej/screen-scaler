@@ -15,7 +15,7 @@
     </a>
 </p>
 
-https://github.com/garronej/screen-scaler/assets/6702424/b50dbc48-40bb-465c-8551-6eea36c56639
+https://github.com/garronej/screen-scaler/assets/6702424/d4d4a525-a2ee-4289-85d5-b410b8c830cd
 
 ## Motivation
 
