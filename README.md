@@ -19,35 +19,25 @@ https://github.com/garronej/react-screen-scaler/assets/6702424/22d630a4-99fc-463
 
 ## Motivation
 
-Designing a web application that will renders great on every screen size is a very device is a time consuming task, regardless of how
-skilled your developers and designers are.
+Designing a web application that renders well on various screen sizes is a time-consuming task, regardless of the skill level of your developers and designers.
 
-Nowadays, the web is often used as a platform to ship enterprise software to a specific user base with mostly uniform screen resolutions and dimension.  
-In particular many of those application will never or rarely be used on mobile devices.
+In today's world, the web is often leveraged to deliver enterprise software to a specific user base with largely uniform screen resolutions and dimensions. Specifically, many of these applications are seldom or never used on mobile devices.
 
-In this context it's a waste of time to spend time on building responsive design, we can instead focus on building a great user experience for a specific screen size.
+In such scenarios, dedicating time to responsive design can be counterproductive. Instead, we can focus on delivering an exceptional user experience for a specific screen size.
 
-This is where React-ScreenScaler comes in.
-It allows you to assume that all your users have a specific screen resolution and dimension.  
-When the actual screen size is different, screen-scaler will just shrink or grow your app to fit the screen.  
-screen-scaler fully emulates the targeted screen resolution, all the relevant DOM API are spoofed so that from inside the browser
-there is no way to tell that the screen size is different than the targeted one.
+This is where React-ScreenScaler comes into play. It allows you to design your application as if all your users have a specific screen resolution and dimension. When the actual screen size varies, React-ScreenScaler will automatically shrink or expand your app to fit. It fully emulates the targeted screen resolution, spoofing all relevant DOM APIs so that it's indistinguishable from the targeted resolution within the browser environment.
 
-For example, if you set the target width resolution to `1920px`.
-`window.innerWidth` will be `1920` and regardless of the actual screen size.
+For instance, if you set the target width resolution to 1920px, the value of window.innerWidth will be 1920, regardless of the actual screen size.
 
 ## Features
 
--   Automatically scales your React app to fit any screen size different than your target resolution.
--   The DOM APIs are fully spoofed to emulate your specifications.
--   Works with any CSS framework, a specific adapter is provided for React.
--   Don't require any change to your code base, it's just a function call, it will play well with any
-    UI library such as MUI, Ant Design, Chakra UI, etc...
--   Flexible, you can enable the scaling only for a specific screen size range.
-    For example if you know your app render fine on big screen but it's only on small screen that it breaks, you can
-    enable the scaling only for screen width below `1000px`.
--   Accessibility preserved. Your users can still zoom in and out with `ctrl + mouse wheel` or `⌘ + '+' or ⌘ + '-'`...
-    As long as you allow them to do so (You should).
+-   Automatically scales your React app to fit any screen size that differs from your target resolution.
+-   Fully spoofs DOM APIs to emulate your specified settings.
+-   Compatible with any CSS framework; a specialized adapter is available for React.
+-   Requires no changes to your existing code base; it's a simple function call and integrates seamlessly with any UI library, including MUI, Ant Design, and Chakra UI.
+-   Offers flexibility by enabling scaling only for specific screen size ranges. For instance, if your app renders well on large screens but breaks on smaller ones, you can activate scaling only for screen widths below `1000px`.
+-   Preserves accessibility features, allowing users to zoom in and out with `ctrl + mouse wheel` or `⌘ + '+'` or `⌘ + '-'`, provided you enable this functionality (and you should).
+
 
 ## Usage
 
@@ -122,9 +112,7 @@ export function App() {
 
 ### Readability issues
 
-The problem with scaling down your app is that the text will become smaller and smaller as the screen size decrease.  
-Inertly, on very big screen everything will appear very big, giving the impression that it's an app for kids.  
-You can mitigate theses issues by dynamically changing the target width.
+The issue with scaling down your app is that the text becomes increasingly smaller as the screen size decreases. Conversely, on very large screens, everything appears disproportionately large, creating the impression that the app is designed for children. These issues can be mitigated by dynamically adjusting the target width.  
 
 ```ts
 const { ScreenScaler } = createScreenScaler({
