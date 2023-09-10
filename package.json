@@ -1,7 +1,7 @@
 {
     "name": "screen-scaler",
     "version": "1.0.0",
-    "description": "Design Once, Render Everywhere: Screen-size agnostic React development for uniform environments",
+    "description": "One-size-fit-all web design: Screen-size agnostic development environment.",
     "repository": {
         "type": "git",
         "url": "git://github.com/garronej/screen-scaler.git"
