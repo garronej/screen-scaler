@@ -1,16 +1,16 @@
 {
-    "name": "react-screen-scaler",
+    "name": "screen-scaler",
     "version": "1.0.0",
     "description": "Design Once, Render Everywhere: Screen-size agnostic React development for uniform environments",
     "repository": {
         "type": "git",
-        "url": "git://github.com/garronej/react-screen-scaler.git"
+        "url": "git://github.com/garronej/screen-scaler.git"
     },
     "scripts": {
         "build": "tsc",
         "_format": "prettier '**/*.{ts,tsx,json,md}'",
-        "format": "npm run _format -- --write",
-        "format:check": "npm run _format -- --list-different",
+        "format": "yarn run _format -- --write",
+        "format:check": "yarn run _format -- --list-different",
         "link-in-app": "yarn build && (ts-node --skipProject scripts/link-in-app.ts & yarn build -w)",
         "start-test-app": "yarn build && ts-node --skipProject scripts/link-in-test-app.ts && ((cd test-app && rm -rf node_modules/.cache && yarn start) & yarn build -w)"
     },
@@ -38,7 +38,7 @@
         "!dist/tsconfig.tsbuildinfo"
     ],
     "keywords": [],
-    "homepage": "https://github.com/garronej/react-screen-scaler",
+    "homepage": "https://github.com/garronej/screen-scaler",
     "devDependencies": {
         "@types/node": "^20.2.1",
         "@types/react": "^18.2.6",

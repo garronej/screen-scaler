@@ -5,17 +5,17 @@
     <i>One-size-fit-all web design: Screen-size agnostic development experience.</i>
     <br>
     <br>
-    <a href="https://github.com/garronej/react-screen-scaler/actions">
-      <img src="https://github.com/garronej/react-screen-scaler/workflows/ci/badge.svg?branch=main">
+    <a href="https://github.com/garronej/screen-scaler/actions">
+      <img src="https://github.com/garronej/screen-scaler/workflows/ci/badge.svg?branch=main">
     </a>
-    <a href="https://bundlephobia.com/package/react-screen-scaler">
-      <img src="https://img.shields.io/bundlephobia/minzip/react-screen-scaler">
+    <a href="https://bundlephobia.com/package/screen-scaler">
+      <img src="https://img.shields.io/bundlephobia/minzip/screen-scaler">
     </a>
-    <a href="https://www.npmjs.com/package/react-screen-scaler">
-      <img src="https://img.shields.io/npm/dw/react-screen-scaler">
+    <a href="https://www.npmjs.com/package/screen-scaler">
+      <img src="https://img.shields.io/npm/dw/screen-scaler">
     </a>
-    <a href="https://github.com/garronej/react-screen-scaler/blob/main/LICENSE">
-      <img src="https://img.shields.io/npm/l/react-screen-scaler">
+    <a href="https://github.com/garronej/screen-scaler/blob/main/LICENSE">
+      <img src="https://img.shields.io/npm/l/screen-scaler">
     </a>
 </p>
 
@@ -56,7 +56,7 @@ For example, if you set the target width resolution to `1920px`.
 Make it so that your app is always rendered as if the user had a screen resolution width of 1920.
 
 ```tsx
-import { createScreenScaler } from "react-screen-scaler";
+import { createScreenScaler } from "screen-scaler";
 
 const { ScreenScaler } = createScreenScaler({
     // The zoom factor if for supporting when the use zooms in or out (ctrl + mouse wheel or ⌘ + '+' or ⌘ + '-') ...
@@ -110,7 +110,7 @@ In this case, you have two options:
 2: Tell your user to rotate their device:
 
 ```tsx
-import { createScreenScaler } from "react-screen-scaler";
+import { createScreenScaler } from "screen-scaler";
 
 const { ScreenScaler } = createScreenScaler({
     targetWindowInnerWidth: ({ zoomFactor, isPortraitOrientation }) =>
@@ -146,8 +146,8 @@ This library has been used to build the following projects:
 ## Contributing
 
 ```bash
-git clone https://github.com/garronej/react-screen-scaler
-cd react-screen-scaler
+git clone https://github.com/garronej/screen-scaler
+cd screen-scaler
 yarn
 
 # Start the test app in watch mode

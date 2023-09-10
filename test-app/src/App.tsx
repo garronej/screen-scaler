@@ -1,4 +1,4 @@
-import { enableScreenScaler } from "react-screen-scaler";
+import { enableScreenScaler } from "screen-scaler";
 import { useDomRect } from "powerhooks/tools/useDomRect";
 import { BasicSelect } from "./BasicSelect";
 import Button from "@mui/material/Button";
