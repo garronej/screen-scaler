@@ -1,5 +1,8 @@
 import { assert } from "tsafe/assert";
-import { Evt, onlyIfChanged } from "evt";
+import { Evt, onlyIfChanged, type Ctx } from "evt";
+import { getOwnPropertyDescriptor } from "./tools/getOwnPropertyDescriptor";
+
+let ctx: Ctx | undefined = undefined;
 
 export function enableScreenScaler(params: {
     targetWindowInnerWidth:
@@ -10,12 +13,106 @@ export function enableScreenScaler(params: {
               zoomFactor: number;
               isPortraitOrientation: boolean;
           }) => number | undefined);
-}) {
+}): {
+    disableScreenScaler: () => void;
+} {
+    ctx?.done();
+
+    ctx = Evt.newCtx();
+
     const getTargetWindowInnerWidth = (() => {
         const { targetWindowInnerWidth: param } = params;
 
         return typeof param === "function" ? param : () => param;
     })();
+
+    {
+        const { rootElement } = (() => {
+            let rootElement = document.body.querySelector(" #root, #app") ?? undefined;
+
+            if (!(rootElement instanceof HTMLElement)) {
+                rootElement = undefined;
+            }
+
+            return { rootElement };
+        })();
+
+        const initialStyles = {
+            "body": {
+                "margin": document.body.style.margin,
+                "transform": document.body.style.transform,
+                "transformOrigin": document.body.style.transformOrigin,
+                "width": document.body.style.width,
+                "height": document.body.style.height,
+                "overflow": document.body.style.overflow
+            },
+            "html": {
+                "height": document.documentElement.style.height,
+                "overflow": document.documentElement.style.overflow
+            },
+            "root":
+                rootElement === undefined
+                    ? undefined
+                    : {
+                          "height": rootElement.style.height
+                      }
+        };
+
+        const propertyDescriptors = {
+            "window": {
+                "innerWidth": getOwnPropertyDescriptor(window, "innerWidth"),
+                "innerHeight": getOwnPropertyDescriptor(window, "innerHeight")
+            },
+            "Element.prototype": {
+                "getBoundingClientRect": getOwnPropertyDescriptor(
+                    Element.prototype,
+                    "getBoundingClientRect"
+                )
+            },
+            "ResizeObserverEntry.prototype": {
+                "contentRect": getOwnPropertyDescriptor(ResizeObserverEntry.prototype, "contentRect")
+            },
+            "MouseEvent.prototype": {
+                "clientX": getOwnPropertyDescriptor(MouseEvent.prototype, "clientX"),
+                "clientY": getOwnPropertyDescriptor(MouseEvent.prototype, "clientY")
+            }
+        };
+
+        const RealResizeObserver = window.ResizeObserver;
+
+        ctx.evtDoneOrAborted.attachOnce(() => {
+            Object.defineProperties(window, {
+                "innerWidth": propertyDescriptors.window.innerWidth,
+                "innerHeight": propertyDescriptors.window.innerHeight
+            });
+
+            Object.defineProperties(Element.prototype, {
+                "getBoundingClientRect": propertyDescriptors["Element.prototype"].getBoundingClientRect
+            });
+
+            Object.defineProperty(
+                ResizeObserverEntry.prototype,
+                "contentRect",
+                propertyDescriptors["ResizeObserverEntry.prototype"].contentRect
+            );
+
+            Object.defineProperties(MouseEvent.prototype, {
+                "clientX": propertyDescriptors["MouseEvent.prototype"].clientX,
+                "clientY": propertyDescriptors["MouseEvent.prototype"].clientY
+            });
+
+            window.ResizeObserver = RealResizeObserver;
+
+            Object.assign(document.body.style, initialStyles.body);
+            Object.assign(document.documentElement.style, initialStyles.html);
+
+            if (rootElement !== undefined) {
+                Object.assign(rootElement.style, initialStyles.root);
+            }
+        });
+    }
+
+    document.body.style.margin = "0";
 
     type State = {
         actualWindowInnerHeight: number;
@@ -30,34 +127,7 @@ export function enableScreenScaler(params: {
         | { isOutOfRange: true }
     );
 
-    document.body.style.margin = "0";
-
-    const { getPersistedZoomLevelState, persistZoomLevelState } = (() => {
-        const key = "screen-scaler-zoom-level";
-
-        type State = { devicePixelRatio: number; zoomLevel: number };
-
-        function getPersistedZoomLevelState(): State | undefined {
-            const serializedState = localStorage.getItem(key);
-
-            if (serializedState === null) {
-                return undefined;
-            }
-
-            return JSON.parse(serializedState);
-        }
-
-        function persistZoomLevelState(state: State): void {
-            localStorage.setItem(key, JSON.stringify(state));
-        }
-
-        return {
-            getPersistedZoomLevelState,
-            persistZoomLevelState
-        };
-    })();
-
-    const evtZoomFactor = Evt.from(window, "resize")
+    const evtZoomFactor = Evt.from(ctx, window, "resize")
         .toStateful()
         .pipe([
             (_data, prev) =>
@@ -129,7 +199,7 @@ export function enableScreenScaler(params: {
         assert(clientWidthGetter !== undefined);
         assert(clientHeightGetter !== undefined);
 
-        const evtActualWindowInnerWidth = Evt.from(window, "resize")
+        const evtActualWindowInnerWidth = Evt.from(ctx, window, "resize")
             .toStateful()
             .pipe(() => [
                 {
@@ -418,4 +488,36 @@ export function enableScreenScaler(params: {
         document.body.style.height = `${state.targetWindowInnerHeight}px`;
         document.body.style.overflow = "hidden";
     });
+
+    function disableScreenScaler() {
+        assert(ctx !== undefined);
+        ctx.done();
+    }
+
+    return { disableScreenScaler };
 }
+
+const { getPersistedZoomLevelState, persistZoomLevelState } = (() => {
+    const key = "screen-scaler-zoom-level";
+
+    type State = { devicePixelRatio: number; zoomLevel: number };
+
+    function getPersistedZoomLevelState(): State | undefined {
+        const serializedState = localStorage.getItem(key);
+
+        if (serializedState === null) {
+            return undefined;
+        }
+
+        return JSON.parse(serializedState);
+    }
+
+    function persistZoomLevelState(state: State): void {
+        localStorage.setItem(key, JSON.stringify(state));
+    }
+
+    return {
+        getPersistedZoomLevelState,
+        persistZoomLevelState
+    };
+})();
