@@ -59,7 +59,7 @@
         "access": "public"
     },
     "dependencies": {
-        "evt": "^2.5.0",
+        "evt": "^2.5.1",
         "tsafe": "^1.6.4"
     }
 }

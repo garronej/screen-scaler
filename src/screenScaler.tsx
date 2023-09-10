@@ -1,5 +1,6 @@
 import { assert } from "tsafe/assert";
-import { Evt, onlyIfChanged, type Ctx } from "evt";
+import { Evt, type Ctx } from "evt";
+import { onlyIfChanged } from "evt/operators/onlyIfChanged";
 import { getOwnPropertyDescriptor } from "./tools/getOwnPropertyDescriptor";
 
 let ctx: Ctx | undefined = undefined;
