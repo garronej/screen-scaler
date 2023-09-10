@@ -1,15 +1,16 @@
 import { enableScreenScaler } from "react-screen-scaler";
 import { useDomRect } from "powerhooks/tools/useDomRect";
 import { BasicSelect } from "./BasicSelect";
-//import { GetBoundingClientRectTest } from "./GetBoundingClientRectTest";
 import Button from "@mui/material/Button";
 //import "./main.css";
 
+
 enableScreenScaler({
-    "targetWindowInnerWidth": ({ zoomFactor, isPortraitOrientation }) =>
+    "targetWindowInnerWidth": ({ zoomFactor, isPortraitOrientation, actualWindowInnerWidth }) =>
         isPortraitOrientation ?
             undefined :
-            1920 * zoomFactor,
+            1500 * zoomFactor,
+    "rootDivId": "root"
 });
 
 export function App() {
@@ -33,7 +34,7 @@ export function App() {
                         color: "#FFF",
                     }}
                 >
-                    Header
+                    <h2>Header</h2>
                 </header>
                 <main style={{
                     flex: 1,
@@ -68,7 +69,7 @@ export function App() {
                                     }}>
                                         <h2 style={{color: '#333'}}>Card {index}</h2>
                                         <BasicSelect />
-                                        <Button variant="contained">Contained</Button>
+                                        <Button variant="contained" sx={{ "mt": 2 }}>Contained</Button>
                                         {/*index === 0 && <GetBoundingClientRectTest />*/}
                                         <p style={{color: '#333'}}>
                                             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec euismod, nisl eget
@@ -89,7 +90,7 @@ export function App() {
                     backgroundColor: "#333",
                     color: "#FFF"
                 }}>
-                    Footer
+                    <h3>Footer</h3>
                 </footer>
 
 
