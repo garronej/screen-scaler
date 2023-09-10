@@ -1,9 +1,5 @@
 <p align="center">
-    <img src="https://user-images.githubusercontent.com/6702424/80216211-00ef5280-863e-11ea-81de-59f3a3d4b8e4.png">  
-</p>
-<p align="center">
     <i>One-size-fit-all web design: Screen-size agnostic development environment.</i>
-    <br>
     <br>
     <a href="https://github.com/garronej/screen-scaler/actions">
       <img src="https://github.com/garronej/screen-scaler/workflows/ci/badge.svg?branch=main">
@@ -18,6 +14,8 @@
       <img src="https://img.shields.io/npm/l/screen-scaler">
     </a>
 </p>
+
+https://github.com/garronej/react-screen-scaler/assets/6702424/22d630a4-99fc-4638-938d-e1a38bff3b3a
 
 ## Motivation
 
