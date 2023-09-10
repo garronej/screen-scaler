@@ -185,17 +185,13 @@ export function enableScreenScaler(params: {
         const { get: clientWidthGetter } =
             Object.getOwnPropertyDescriptor(Element.prototype, "clientWidth") ?? {};
 
-        if ((window as any)["clientWidthGetter"] === undefined) {
-            (window as any)["clientWidthGetter"] = clientWidthGetter;
-        }
-
         const { get: clientHeightGetter } =
             Object.getOwnPropertyDescriptor(Element.prototype, "clientHeight") ?? {};
 
         assert(clientWidthGetter !== undefined);
         assert(clientHeightGetter !== undefined);
 
-        const evtActualWindowInnerWidth = Evt.from(ctx, window, "resize")
+        const evtActualWindowInnerWidth = Evt.from(ctx, ResizeObserver, window.document.documentElement)
             .toStateful()
             .pipe(() => [
                 {
