@@ -16,7 +16,7 @@
     </a>
 </p>  
 
-https://github.com/garronej/react-screen-scaler/assets/6702424/b5f7020f-97cc-4afd-9a12-01fafc4deac8
+https://github.com/garronej/react-screen-scaler/assets/6702424/22d630a4-99fc-4638-938d-e1a38bff3b3a
 
 ## Motivation
 
