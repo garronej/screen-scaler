@@ -1,6 +1,7 @@
 <p align="center">
     <i>One-size-fit-all web design: Screen-size agnostic development environment.</i>
     <br>
+    <br>
     <a href="https://github.com/garronej/screen-scaler/actions">
       <img src="https://github.com/garronej/screen-scaler/workflows/ci/badge.svg?branch=main">
     </a>
