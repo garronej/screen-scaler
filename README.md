@@ -31,13 +31,11 @@ For instance, if you set the target width resolution to 1920px, the value of win
 
 ## Features
 
--   Automatically scales your React app to fit any screen size that differs from your target resolution.
--   Fully spoofs DOM APIs to emulate your specified settings.
--   Compatible with any CSS framework; a specialized adapter is available for React, if you want one for Vue or Svelt, just open an issue about it.  
--   Requires no changes to your existing code base; it's a simple function call and integrates seamlessly with any UI library, including MUI, Ant Design, and Chakra UI.
--   Offers flexibility by enabling scaling only for specific screen size ranges. For instance, if your app renders well on large screens but breaks on smaller ones, you can activate scaling only for screen widths below `1000px`.
--   Preserves accessibility features, allowing users to zoom in and out with `ctrl + mouse wheel` or `⌘ + '+'` or `⌘ + '-'`, provided you enable this functionality (and you should).  
-  
+-   📏 Automatically scales your React app to fit any screen size that differs from your target resolution.
+-   🎭 Fully spoofs DOM APIs to emulate your specified settings.
+-   🔌 Requires no changes to your existing code base; it's a simple function call and integrates seamlessly with any CSS Framework and UI library.
+-   🛠️ Offers flexibility by enabling scaling only for specific screen size ranges. For instance, if your app renders well on large screens but breaks on smaller ones, you can activate scaling only for screen widths below `1000px`.
+-   ♿ Preserves accessibility features, allowing users to zoom in and out with `ctrl + mouse wheel` or `⌘ + '+'` or `⌘ + '-'`, provided you enable this functionality (and you should).
 
 ## Usage
 
@@ -46,7 +44,7 @@ Make it so that your app is always rendered as if the user had a screen resoluti
 ```tsx
 import { createScreenScaler } from "screen-scaler";
 
-const { ScreenScaler } = createScreenScaler({
+enableScreenScaler({
     // The zoom factor if for supporting when the use zooms in or out (ctrl + mouse wheel or ⌘ + '+' or ⌘ + '-') ...
     targetWindowInnerWidth: ({ zoomFactor }) => 1920 * zoomFactor,
 
@@ -56,10 +54,6 @@ const { ScreenScaler } = createScreenScaler({
     // This is the id of the root div of your app. With modern frameworks it's usually "root" or "app".
     rootDivId: "app"
 });
-
-export function App() {
-    return <ScreenScaler>{/* Your app here */}</ScreenScaler>;
-}
 ```
 
 ## Limitations and workarounds
@@ -98,24 +92,34 @@ In this case, you have two options:
 2: Tell your user to rotate their device:
 
 ```tsx
-import { createScreenScaler } from "screen-scaler";
+import { createScreenScaler } from "screen-scaler/react";
 
-const { ScreenScaler } = createScreenScaler({
+const { useIsOutOfRange } = createScreenScaler({
     targetWindowInnerWidth: ({ zoomFactor, isPortraitOrientation }) =>
         isPortraitOrientation ? undefined : 1920 * zoomFactor
 });
 
 export function App() {
+    const isOutOfRange = useIsOutOfRange();
+
+    if (isOutOfRange) {
+        return <h1>Please Rotate your phone, this app does not render well in portrait mode.</h1>;
+    }
+
     return <ScreenScaler fallback={<h1>Rotate your phone</h1>}>{/* Your app here */}</ScreenScaler>;
 }
 ```
 
+> NOTE: We provide this example using the dedicated React adapter. To do that in another framework you
+> will need to replace your app by a fallback element when your `targetWindowInnerWidth` returns `undefined`.
+> If you'd like an adapter for your framework of choice, please open an issue.
+
 ### Readability issues
 
-The issue with scaling down your app is that the text becomes increasingly smaller as the screen size decreases. Conversely, on very large screens, everything appears disproportionately large, creating the impression that the app is designed for children. These issues can be mitigated by dynamically adjusting the target width.  
+The issue with scaling down your app is that the text becomes increasingly smaller as the screen size decreases. Conversely, on very large screens, everything appears disproportionately large, creating the impression that the app is designed for children. These issues can be mitigated by dynamically adjusting the target width.
 
 ```ts
-const { ScreenScaler } = createScreenScaler({
+enableScreenScaler({
     // Example: Disabling the scaling for screen width above 1100px
     targetWindowInnerWidth: ({ actualWindowInnerWidth }) => Math.max(windowInnerWidth, 1100)
 });

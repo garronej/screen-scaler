@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
@@ -12,27 +12,6 @@ export  function BasicSelect() {
     setAge(event.target.value as string);
   };
 
-  const [ref, setRef] = useState<React.ElementRef<"div"> | null>(null);
-
-  useEffect(() => {
-      if (ref === null) {
-          return;
-      }
-
-      console.log("=========>", ref);
-
-      const domRect = ref.getBoundingClientRect();
-
-      console.log({
-        "domRect.top": domRect.top,
-        "domRect.left": domRect.left,
-
-      });
-
-  }, [ref]);
-
-
-
   return (
     <Box sx={{ width: 200 }}>
       <FormControl fullWidth>
@@ -43,7 +22,6 @@ export  function BasicSelect() {
           value={age}
           label="Age"
           onChange={handleChange}
-          ref={setRef}
         >
           <MenuItem value={10}>Ten</MenuItem>
           <MenuItem value={20}>Twenty</MenuItem>

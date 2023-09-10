@@ -471,13 +471,19 @@ export function enableScreenScaler(params: {
     }
 
     evtState.attach(state => {
-        if (state.isOutOfRange) {
-            return;
-        }
-        document.body.style.transform = `scale(${state.scaleFactor})`;
+        const scaleFactor = state.isOutOfRange ? 1 : state.scaleFactor;
+
+        const targetWindowInnerWidth = state.isOutOfRange
+            ? state.actualWindowInnerWidth
+            : state.targetWindowInnerWidth;
+        const targetWindowInnerHeight = state.isOutOfRange
+            ? state.actualWindowInnerHeight
+            : state.targetWindowInnerHeight;
+
+        document.body.style.transform = `scale(${scaleFactor})`;
         document.body.style.transformOrigin = "0 0";
-        document.body.style.width = `${state.targetWindowInnerWidth}px`;
-        document.body.style.height = `${state.targetWindowInnerHeight}px`;
+        document.body.style.width = `${targetWindowInnerWidth}px`;
+        document.body.style.height = `${targetWindowInnerHeight}px`;
         document.body.style.overflow = "hidden";
     });
 
