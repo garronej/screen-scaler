@@ -33,11 +33,11 @@ For instance, if you set the target width resolution to 1920px, the value of win
 
 -   Automatically scales your React app to fit any screen size that differs from your target resolution.
 -   Fully spoofs DOM APIs to emulate your specified settings.
--   Compatible with any CSS framework; a specialized adapter is available for React.
+-   Compatible with any CSS framework; a specialized adapter is available for React, if you want one for Vue or Svelt, just open an issue about it.  
 -   Requires no changes to your existing code base; it's a simple function call and integrates seamlessly with any UI library, including MUI, Ant Design, and Chakra UI.
 -   Offers flexibility by enabling scaling only for specific screen size ranges. For instance, if your app renders well on large screens but breaks on smaller ones, you can activate scaling only for screen widths below `1000px`.
--   Preserves accessibility features, allowing users to zoom in and out with `ctrl + mouse wheel` or `⌘ + '+'` or `⌘ + '-'`, provided you enable this functionality (and you should).
-
+-   Preserves accessibility features, allowing users to zoom in and out with `ctrl + mouse wheel` or `⌘ + '+'` or `⌘ + '-'`, provided you enable this functionality (and you should).  
+  
 
 ## Usage
 
@@ -48,7 +48,7 @@ import { createScreenScaler } from "screen-scaler";
 
 const { ScreenScaler } = createScreenScaler({
     // The zoom factor if for supporting when the use zooms in or out (ctrl + mouse wheel or ⌘ + '+' or ⌘ + '-') ...
-    targetWindowInnerWidth: ({ zoomFactor }) => 1920 * zoomFactor
+    targetWindowInnerWidth: ({ zoomFactor }) => 1920 * zoomFactor,
 
     // If you don't want to enable your user to zoom at all you can provide an absolute value
     //targetWindowInnerWidth: 1920
