@@ -40,7 +40,7 @@ export function enableScreenScaler(params: ScreenScalerParams) {
 
         const isOutOfRange = useIsOutOfRange();
 
-        return isOutOfRange ? fallback : children;
+        return <>{isOutOfRange ? fallback : children}</>;
     }
 
     return { useIsOutOfRange, ScreenScalerOutOfRangeFallbackProvider };
