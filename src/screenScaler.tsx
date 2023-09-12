@@ -5,7 +5,7 @@ import { getOwnPropertyDescriptor } from "./tools/getOwnPropertyDescriptor";
 
 let ctx: Ctx | undefined = undefined;
 
-export function enableScreenScaler(params: {
+export type ScreenScalerParams = {
     targetWindowInnerWidth:
         | (number | undefined)
         | ((params: {
@@ -15,7 +15,9 @@ export function enableScreenScaler(params: {
               isPortraitOrientation: boolean;
           }) => number | undefined);
     rootDivId: string;
-}): {
+};
+
+export function enableScreenScaler(params: ScreenScalerParams): {
     disableScreenScaler: () => void;
 } {
     ctx?.done();

@@ -1,9 +1,13 @@
-import { enableScreenScaler as enableScreenScaler_vanilla } from "./screenScaler";
-import type { Param0 } from "tsafe";
+import {
+    enableScreenScaler as enableScreenScaler_vanilla,
+    type ScreenScalerParams
+} from "./screenScaler";
 import { Evt } from "evt";
 import { useRerenderOnStateChange } from "evt/hooks/useRerenderOnStateChange";
 
-export function enableScreenScaler(params: Param0<typeof enableScreenScaler_vanilla>) {
+export type { ScreenScalerParams };
+
+export function enableScreenScaler(params: ScreenScalerParams) {
     const { rootDivId, targetWindowInnerWidth: targetWindowInnerWidth_params } = params;
 
     const evtIsOutOfRange = Evt.create(false);
