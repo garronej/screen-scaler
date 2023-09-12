@@ -95,19 +95,19 @@ In this case, you have two options:
 ```tsx
 import { createScreenScaler } from "screen-scaler/react";
 
-const { useIsOutOfRange } = createScreenScaler({
+const { ScreenScalerOutOfRangeFallbackProvider } = createScreenScaler({
     targetWindowInnerWidth: ({ zoomFactor, isPortraitOrientation }) =>
         isPortraitOrientation ? undefined : 1920 * zoomFactor
 });
 
 export function App() {
-    const isOutOfRange = useIsOutOfRange();
-
-    if (isOutOfRange) {
-        return <h1>Please Rotate your phone, this app does not render well in portrait mode.</h1>;
-    }
-
-    return <ScreenScaler fallback={<h1>Rotate your phone</h1>}>{/* Your app here */}</ScreenScaler>;
+    return (
+        <ScreenScalerOutOfRangeFallbackProvider
+            fallback={<h1>Please Rotate your phone, this app does not render well in portrait mode.</h1>}
+        >
+            {/* Your app here */}
+        </ScreenScalerOutOfRangeFallbackProvider>
+    );
 }
 ```
 

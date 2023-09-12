@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import {
     enableScreenScaler as enableScreenScaler_vanilla,
     type ScreenScalerParams
@@ -31,5 +32,16 @@ export function enableScreenScaler(params: ScreenScalerParams) {
         return evtIsOutOfRange.state;
     }
 
-    return { useIsOutOfRange };
+    function ScreenScalerOutOfRangeFallbackProvider(props: {
+        fallback: ReactNode;
+        children: ReactNode;
+    }) {
+        const { fallback, children } = props;
+
+        const isOutOfRange = useIsOutOfRange();
+
+        return isOutOfRange ? fallback : children;
+    }
+
+    return { useIsOutOfRange, ScreenScalerOutOfRangeFallbackProvider };
 }
