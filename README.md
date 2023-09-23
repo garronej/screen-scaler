@@ -46,10 +46,10 @@ Make it so that your app is always rendered as if the user had a screen resoluti
 import { createScreenScaler } from "screen-scaler";
 
 enableScreenScaler({
-    // The zoom factor if for supporting when the use zooms in or out (ctrl + mouse wheel or ⌘ + '+' or ⌘ + '-') ...
+    // The zoom factor is for supporting when the user zooms in or out (ctrl + mouse wheel or ⌘ + '+' or ⌘ + '-') ...
     targetWindowInnerWidth: ({ zoomFactor }) => 1920 * zoomFactor,
 
-    // If you don't want to enable your user to zoom at all you can provide an absolute value
+    // If you don't want to enables your user to zoom you can provide an absolute value
     //targetWindowInnerWidth: 1920
 
     // This is the id of the root div of your app. With modern frameworks it's usually "root" or "app".
