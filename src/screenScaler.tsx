@@ -419,7 +419,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
 
                 this.targets.add(target);
 
-                evtState.toStateless().attach(this.ctx, () => {
+                evtState.toStateless(this.ctx).attach(() => {
                     this.callback(
                         Array.from(this.targets).map(target => {
                             const contentRect = target.getBoundingClientRect();
