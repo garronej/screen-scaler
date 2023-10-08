@@ -94,11 +94,11 @@ In this case, you have two options:
 2: Tell your user to rotate their device:
 
 ```tsx
-import { createScreenScaler } from "screen-scaler/react";
+import { enableScreenScaler } from "screen-scaler/react";
 
-const { ScreenScalerOutOfRangeFallbackProvider } = createScreenScaler({
-    targetWindowInnerWidth: ({ zoomFactor, isPortraitOrientation }) =>
-        isPortraitOrientation ? undefined : 1920 * zoomFactor
+const { ScreenScalerOutOfRangeFallbackProvider } = enableScreenScaler({
+    rootDivId: "root",
+    targetWindowInnerWidth: ({ zoomFactor }) => 1920 * zoomFactor
 });
 
 export function App() {
