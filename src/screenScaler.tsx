@@ -405,6 +405,8 @@ export function enableScreenScaler(params: ScreenScalerParams): {
     {
         const RealResizeObserver = window.ResizeObserver;
 
+        evtState.setMaxHandlers(Infinity);
+
         class CustomResizeObserver extends RealResizeObserver {
             private ctx = Evt.newCtx();
 
