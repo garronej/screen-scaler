@@ -451,12 +451,14 @@ export function enableScreenScaler(params: ScreenScalerParams): {
 
                 if (this.targets.size === 0) {
                     this.ctx.done();
+                    this.ctx = Evt.newCtx();
                 }
             }
 
             disconnect(): void {
                 super.disconnect();
                 this.ctx.done();
+                this.ctx = Evt.newCtx();
             }
         }
 
