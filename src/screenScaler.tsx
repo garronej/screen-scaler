@@ -293,46 +293,44 @@ export function enableScreenScaler(params: ScreenScalerParams): {
 
                         assert(realVisualViewportGetter !== undefined);
 
-                        const getter = function () {
-                            return new Proxy(
-                                {},
-                                {
-                                    "get": function (_target, prop) {
-                                        if (prop === "width") {
-                                            return evtState.state.isOutOfRange
-                                                ? evtState.state.actualWindowInnerWidth
-                                                : evtState.state.targetWindowInnerWidth;
-                                        }
-
-                                        if (prop === "height") {
-                                            return evtState.state.isOutOfRange
-                                                ? evtState.state.actualWindowInnerHeight
-                                                : evtState.state.targetWindowInnerHeight;
-                                        }
-
-                                        const realVisualViewport = realVisualViewportGetter.call(window);
-
-                                        if (prop === "scale") {
-                                            return evtState.state.isOutOfRange
-                                                ? realVisualViewport.scale
-                                                : evtState.state.scaleFactor;
-                                        }
-
-                                        const value = realVisualViewport[prop];
-
-                                        if (typeof value === "function") {
-                                            return value.bind(realVisualViewport);
-                                        }
-
-                                        return value;
+                        const proxy = new Proxy(
+                            {},
+                            {
+                                "get": function (_target, prop) {
+                                    if (prop === "width") {
+                                        return evtState.state.isOutOfRange
+                                            ? evtState.state.actualWindowInnerWidth
+                                            : evtState.state.targetWindowInnerWidth;
                                     }
+
+                                    if (prop === "height") {
+                                        return evtState.state.isOutOfRange
+                                            ? evtState.state.actualWindowInnerHeight
+                                            : evtState.state.targetWindowInnerHeight;
+                                    }
+
+                                    const realVisualViewport = realVisualViewportGetter.call(window);
+
+                                    if (prop === "scale") {
+                                        return evtState.state.isOutOfRange
+                                            ? realVisualViewport.scale
+                                            : evtState.state.scaleFactor;
+                                    }
+
+                                    const value = realVisualViewport[prop];
+
+                                    if (typeof value === "function") {
+                                        return value.bind(realVisualViewport);
+                                    }
+
+                                    return value;
                                 }
-                            );
+                            }
+                        );
+
+                        return function () {
+                            return proxy;
                         };
-
-                        getter.name = "get visualViewport";
-
-                        return getter;
                     })(),
                     "set": windowVisualViewportPd.set
                 };
