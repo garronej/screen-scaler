@@ -11,8 +11,8 @@
         "_format": "prettier '**/*.{ts,tsx,json,md}'",
         "format": "yarn _format --write",
         "format:check": "yarn _format --list-different",
-        "link-in-app": "yarn build && (ts-node --skipProject scripts/link-in-app.ts & yarn build -w)",
-        "start-test-app": "yarn build && ts-node --skipProject scripts/link-in-test-app.ts && ((cd test-app && rm -rf node_modules/.cache && yarn start) & yarn build -w)"
+        "link-in-app": "yarn build && ts-node --skipProject scripts/link-in-app.ts",
+        "start-test-app": "yarn build && ts-node --skipProject scripts/link-in-test-app.ts && cd test-app && rm -rf node_modules/.cache && yarn start"
     },
     "main": "dist/index.js",
     "types": "dist/index.d.ts",

@@ -4548,14 +4548,14 @@ evt@^2.4.22:
     run-exclusive "^2.2.19"
     tsafe "^1.6.4"
 
-evt@^2.5.0:
-  version "2.5.0"
-  resolved "https://registry.yarnpkg.com/evt/-/evt-2.5.0.tgz#e7dfc3d97ef93ffdc585644d6c9439022c44616f"
-  integrity sha512-dvyPRD1J8ruBiSJvEoE81Wfus2QMxLyjFigY5+uoe1yxWqC+UOS9U77oXrkD17B4jxixGWNdmxlusUzOCVrlcg==
+evt@^2.5.2:
+  version "2.5.3"
+  resolved "https://registry.yarnpkg.com/evt/-/evt-2.5.3.tgz#eda564afdda6dfe1da687bb54933706af3f844d6"
+  integrity sha512-wZKx0JgXaTOVOXI2saNVxINU6VToOHDowMwb3NRcU6l+C59eW3w9dZgNxjokiM8rvMgc7/11yFG0cSDxn4qxgA==
   dependencies:
     minimal-polyfills "^2.2.3"
     run-exclusive "^2.2.19"
-    tsafe "^1.6.4"
+    tsafe "^1.6.5"
 
 execa@^5.0.0:
   version "5.1.1"
@@ -7746,12 +7746,6 @@ react-refresh@^0.11.0:
   resolved "https://registry.yarnpkg.com/react-refresh/-/react-refresh-0.11.0.tgz#77198b944733f0f1f1a90e791de4541f9f074046"
   integrity sha512-F27qZr8uUqwhWZboondsPx8tnC3Ct3SxZA3V5WyEvujRyyNv0VYPhoBg1gZ8/MV5tubQp76Trw8lTv9hzRBa+A==
 
-"screen-scaler@file:../dist":
-  version "1.0.0"
-  dependencies:
-    evt "^2.5.0"
-    tsafe "^1.6.4"
-
 react-scripts@5.0.1:
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/react-scripts/-/react-scripts-5.0.1.tgz#6285dbd65a8ba6e49ca8d651ce30645a6d980003"
@@ -8166,6 +8160,12 @@ schema-utils@^4.0.0:
     ajv "^8.9.0"
     ajv-formats "^2.1.1"
     ajv-keywords "^5.1.0"
+
+"screen-scaler@file:../dist":
+  version "1.2.5"
+  dependencies:
+    evt "^2.5.2"
+    tsafe "^1.6.4"
 
 select-hose@^2.0.0:
   version "2.0.0"
@@ -8849,6 +8849,11 @@ tsafe@^1.6.4:
   version "1.6.4"
   resolved "https://registry.yarnpkg.com/tsafe/-/tsafe-1.6.4.tgz#048a114761714538c72f16abd25bb247d4e3780e"
   integrity sha512-l4Z54QFGHO8GF0gBpb3yPGHjkIkIirl8rwW+lMBmtEMzOJeRs8BdjkDEx6nU8Ak9PQVp/KNDtECxTja8MMIDoA==
+
+tsafe@^1.6.5:
+  version "1.6.5"
+  resolved "https://registry.yarnpkg.com/tsafe/-/tsafe-1.6.5.tgz#74943b69190069168a53d2accd6d07891cf1cce8"
+  integrity sha512-895zss8xqqHKTc28sHGIfZKnt3C5jrstB1DyPr/h3/flK0zojsZUMQL1/W4ytdDW6KI4Oth62nb9rrxmA3s3Iw==
 
 tsconfig-paths@^3.14.1:
   version "3.14.2"

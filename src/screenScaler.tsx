@@ -62,7 +62,8 @@ export function enableScreenScaler(params: ScreenScalerParams): {
         const propertyDescriptors = {
             "window": {
                 "innerWidth": getOwnPropertyDescriptor(window, "innerWidth"),
-                "innerHeight": getOwnPropertyDescriptor(window, "innerHeight")
+                "innerHeight": getOwnPropertyDescriptor(window, "innerHeight"),
+                "visualViewport": getOwnPropertyDescriptor(window, "visualViewport")
             },
             "Element.prototype": {
                 "getBoundingClientRect": getOwnPropertyDescriptor(
@@ -277,6 +278,65 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                     ? evtState.state.actualWindowInnerHeight
                     : evtState.state.targetWindowInnerHeight,
             "set": undefined,
+            "enumerable": true,
+            "configurable": true
+        },
+        "visualViewport": {
+            ...(() => {
+                const windowVisualViewportPd = Object.getOwnPropertyDescriptor(window, "visualViewport");
+
+                assert(windowVisualViewportPd !== undefined);
+
+                return {
+                    "get": (() => {
+                        const { get: realVisualViewportGetter } = windowVisualViewportPd ?? {};
+
+                        assert(realVisualViewportGetter !== undefined);
+
+                        const getter = function () {
+                            return new Proxy(
+                                {},
+                                {
+                                    "get": function (_target, prop) {
+                                        if (prop === "width") {
+                                            return evtState.state.isOutOfRange
+                                                ? evtState.state.actualWindowInnerWidth
+                                                : evtState.state.targetWindowInnerWidth;
+                                        }
+
+                                        if (prop === "height") {
+                                            return evtState.state.isOutOfRange
+                                                ? evtState.state.actualWindowInnerHeight
+                                                : evtState.state.targetWindowInnerHeight;
+                                        }
+
+                                        const realVisualViewport = realVisualViewportGetter.call(window);
+
+                                        if (prop === "scale") {
+                                            return evtState.state.isOutOfRange
+                                                ? realVisualViewport.scale
+                                                : evtState.state.scaleFactor;
+                                        }
+
+                                        const value = realVisualViewport[prop];
+
+                                        if (typeof value === "function") {
+                                            return value.bind(realVisualViewport);
+                                        }
+
+                                        return value;
+                                    }
+                                }
+                            );
+                        };
+
+                        getter.name = "get visualViewport";
+
+                        return getter;
+                    })(),
+                    "set": windowVisualViewportPd.set
+                };
+            })(),
             "enumerable": true,
             "configurable": true
         }
