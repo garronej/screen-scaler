@@ -100,7 +100,7 @@ import { enableScreenScaler } from "screen-scaler/react";
 const { ScreenScalerOutOfRangeFallbackProvider } = enableScreenScaler({
     rootDivId: "root",
     targetWindowInnerWidth: ({ zoomFactor, isPortraitOrientation }) =>
-         isPortraitOrientation ? undefined : 1980 * zoomFactor
+         isPortraitOrientation ? undefined : 1920 * zoomFactor
 });
 
 export function App() {
