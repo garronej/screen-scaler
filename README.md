@@ -16,9 +16,11 @@
     </a>
 </p>
 
-https://github.com/garronej/screen-scaler/assets/6702424/d15945b2-e1ac-4e93-a08f-20120a1e01de  
+https://github.com/garronej/screen-scaler/assets/6702424/d15945b2-e1ac-4e93-a08f-20120a1e01de
 
-[Introduction video](https://youtu.be/Ou2I4oWuUj8?si=-0o3pRBsycISdrlH&t=247)  
+<a href="https://youtu.be/Ou2I4oWuUj8?si=-0o3pRBsycISdrlH&t=247">
+  <img width="1712" alt="image" src="https://github.com/garronej/screen-scaler/assets/6702424/0845ead0-1bbb-4fa2-80c2-5aa919dd2717">
+</a>
 
 ## Motivation
 
@@ -100,7 +102,7 @@ import { enableScreenScaler } from "screen-scaler/react";
 const { ScreenScalerOutOfRangeFallbackProvider } = enableScreenScaler({
     rootDivId: "root",
     targetWindowInnerWidth: ({ zoomFactor, isPortraitOrientation }) =>
-         isPortraitOrientation ? undefined : 1920 * zoomFactor
+        isPortraitOrientation ? undefined : 1920 * zoomFactor
 });
 
 export function App() {
