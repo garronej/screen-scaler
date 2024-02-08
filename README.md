@@ -16,7 +16,9 @@
     </a>
 </p>
 
-https://github.com/garronej/screen-scaler/assets/6702424/d15945b2-e1ac-4e93-a08f-20120a1e01de
+https://github.com/garronej/screen-scaler/assets/6702424/d15945b2-e1ac-4e93-a08f-20120a1e01de  
+
+[Introduction video](https://youtu.be/Ou2I4oWuUj8?si=-0o3pRBsycISdrlH&t=247)  
 
 ## Motivation
 
@@ -43,7 +45,7 @@ For instance, if you set the target width resolution to 1920px, the value of win
 Make it so that your app is always rendered as if the user had a screen resolution width of 1920.
 
 ```tsx
-import { createScreenScaler } from "screen-scaler";
+import { enableScreenScaler } from "screen-scaler";
 
 enableScreenScaler({
     // The zoom factor is for supporting when the user zooms in or out (ctrl + mouse wheel or ⌘ + '+' or ⌘ + '-') ...
