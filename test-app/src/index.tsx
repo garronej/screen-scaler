@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from "./App";
-import { enableScreenScaler} from "screen-scaler/react";
+import { enableScreenScaler } from "screen-scaler/react";
 //import { PopperTest } from "./PopperTest";
 
 const { 

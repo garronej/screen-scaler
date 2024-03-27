@@ -1,4 +1,3 @@
-import { enableScreenScaler } from "screen-scaler/react";
 import { BasicSelect } from "./BasicSelect";
 import Button from "@mui/material/Button";
 //import "./main.css";
