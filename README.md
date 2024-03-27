@@ -5,9 +5,6 @@
     <a href="https://github.com/garronej/screen-scaler/actions">
       <img src="https://github.com/garronej/screen-scaler/workflows/ci/badge.svg?branch=main">
     </a>
-    <a href="https://bundlephobia.com/package/screen-scaler">
-      <img src="https://img.shields.io/bundlephobia/minzip/screen-scaler">
-    </a>
     <a href="https://www.npmjs.com/package/screen-scaler">
       <img src="https://img.shields.io/npm/dw/screen-scaler">
     </a>
