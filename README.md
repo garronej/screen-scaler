@@ -27,7 +27,7 @@ In today's world, the web is often leveraged to deliver enterprise software to a
 
 In such scenarios, dedicating time to responsive design can be counterproductive. Instead, we can focus on delivering an exceptional user experience for a specific screen size.
 
-This is where React-ScreenScaler comes into play. It allows you to design your application as if all your users have a specific screen resolution and dimension. When the actual screen size varies, React-ScreenScaler will automatically shrink or expand your app to fit. It fully emulates the targeted screen resolution, spoofing all relevant DOM APIs so that it's indistinguishable from the targeted resolution within the browser environment.
+This is where Screen-Scaler comes into play. It allows you to design your application as if all your users have a specific screen resolution and dimension. When the actual screen size varies, React-ScreenScaler will automatically shrink or expand your app to fit. It fully emulates the targeted screen resolution, spoofing all relevant DOM APIs so that it's indistinguishable from the targeted resolution within the browser environment.
 
 For instance, if you set the target width resolution to 1920px, the value of window.innerWidth will be 1920, regardless of the actual screen size.
 
