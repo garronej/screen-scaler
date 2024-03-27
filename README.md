@@ -58,6 +58,17 @@ enableScreenScaler({
 });
 ```
 
+## Run the test App
+
+```bash
+git clone https://github.com/garronej/screen-scaler
+cd screen-scaler
+yarn
+yarn start-test-app
+```
+
+Screen scaler is setup in [the `src/index.tsx` file](https://github.com/garronej/screen-scaler/blob/6afbbf54c2d0b650f4f746b9e03eb17a8499b7aa/test-app/src/index.tsx#L7-L17).
+
 ## Limitations and workarounds
 
 ### Server side rendering
