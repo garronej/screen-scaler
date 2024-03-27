@@ -39,7 +39,7 @@ For instance, if you set the target width resolution to 1920px, the value of win
 -   🛠️ Offers flexibility by enabling scaling only for specific screen size ranges. For instance, if your app renders well on large screens but breaks on smaller ones, you can activate scaling only for screen widths below `1000px`.
 -   ♿ Preserves accessibility features, allowing users to zoom in and out with `ctrl + mouse wheel` or `⌘ + '+/-'`, provided you enable this functionality (and you should).
 
-## Usage
+## Usage
 
 Make it so that your app is always rendered as if the user had a screen resolution width of 1920.
 
