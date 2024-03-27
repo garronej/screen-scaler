@@ -17,23 +17,17 @@ https://github.com/garronej/screen-scaler/assets/6702424/d15945b2-e1ac-4e93-a08f
 
 <a href="https://youtu.be/Ou2I4oWuUj8?si=Gftx15nVVXWSvzxH&t=268">
   <img width="1712" alt="image" src="https://github.com/garronej/screen-scaler/assets/6702424/0845ead0-1bbb-4fa2-80c2-5aa919dd2717">
-</a>
+</a>  
 
-## Motivation
+## Motivation and Warning
 
-Designing a web application that renders well on various screen sizes is a time-consuming task, regardless of the skill level of your developers and designers.
+**Screen-Scaler is a niche tool designed for very specific use cases.** It enables you to design your application as though every user has the same screen size, automating the adjustment process for different screen dimensions by scaling your app to fit. While this can significantly streamline development for certain projects, **it is not a replacement for responsive design** and is not recommended for general-purpose applications.
 
-In today's world, the web is often leveraged to deliver enterprise software to a specific user base with largely uniform screen resolutions and dimensions. Specifically, many of these applications are seldom or never used on mobile devices.
-
-In such scenarios, dedicating time to responsive design can be counterproductive. Instead, we can focus on delivering an exceptional user experience for a specific screen size.
-
-This is where Screen-Scaler comes into play. It allows you to design your application as if all your users have a specific screen resolution and dimension. When the actual screen size varies, React-ScreenScaler will automatically shrink or expand your app to fit. It fully emulates the targeted screen resolution, spoofing all relevant DOM APIs so that it's indistinguishable from the targeted resolution within the browser environment.
-
-For instance, if you set the target width resolution to 1920px, the value of window.innerWidth will be 1920, regardless of the actual screen size.
+Responsive design remains the gold standard for creating web applications that offer the best user experience across a wide range of devices. Screen-Scaler should be considered either a temporary hack or a solution for projects where user screens are highly uniform and predictable.
 
 ## Features
 
--   📏 Automatically scales your React app to fit any screen size that differs from your target resolution.
+-   📏 Automatically scales your app to fit any screen size that differs from your target resolution.
 -   🎭 Fully spoofs DOM APIs to emulate your specified settings.
 -   🔌 Requires no changes to your existing code base; it's a simple function call and integrates seamlessly with any CSS Framework and UI library.
 -   🛠️ Offers flexibility by enabling scaling only for specific screen size ranges. For instance, if your app renders well on large screens but breaks on smaller ones, you can activate scaling only for screen widths below `1000px`.
