@@ -70,6 +70,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                     Element.prototype,
                     "getBoundingClientRect"
                 ),
+                "getClientRects": getOwnPropertyDescriptor(Element.prototype, "getClientRects"),
                 "clientLeft": getOwnPropertyDescriptor(Element.prototype, "clientLeft"),
                 "clientTop": getOwnPropertyDescriptor(Element.prototype, "clientTop"),
                 "clientWidth": getOwnPropertyDescriptor(Element.prototype, "clientWidth"),
@@ -343,24 +344,112 @@ export function enableScreenScaler(params: ScreenScalerParams): {
     // Pollute getBoundingClientRect
     {
         const realGetBoundingClientRect = Element.prototype.getBoundingClientRect;
+        const realGetClientRects = Element.prototype.getClientRects;
+
+        function getPatchedDomRect(domRect: {
+            x: number;
+            y: number;
+            left: number;
+            top: number;
+            width: number;
+            height: number;
+            right: number;
+            bottom: number;
+        }): DOMRect {
+            const { x, y, left, top, width, height, right, bottom } = domRect;
+
+            const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+
+            const x_patched = x / scaleFactor;
+            const y_patched = y / scaleFactor;
+            const width_patched = width / scaleFactor;
+            const height_patched = height / scaleFactor;
+
+            const domRect_patched = new DOMRect(x_patched, y_patched, width_patched, height_patched);
+
+            Object.defineProperties(domRect_patched, {
+                "left": {
+                    "enumerable": true,
+                    "configurable": true,
+                    "value": left / scaleFactor
+                },
+                "top": {
+                    "enumerable": true,
+                    "configurable": true,
+                    "value": top / scaleFactor
+                },
+                "right": {
+                    "enumerable": true,
+                    "configurable": true,
+                    "value": right / scaleFactor
+                },
+                "bottom": {
+                    "enumerable": true,
+                    "configurable": true,
+                    "value": bottom / scaleFactor
+                }
+            });
+
+            return domRect_patched;
+        }
 
         //Pollute HTMLDivElement.prototype.getBoundingClientRect
         Object.defineProperties(Element.prototype, {
             "getBoundingClientRect": {
                 "value": function getBoundingClientRect(this: Element) {
-                    const { left, top, width, height, right, bottom } =
+                    const { x, y, left, top, width, height, right, bottom } =
                         realGetBoundingClientRect.call(this);
 
-                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+                    return getPatchedDomRect({ x, y, left, top, width, height, right, bottom });
+                },
+                "enumerable": true,
+                "configurable": true,
+                "writable": false
+            },
+            "getClientRects": {
+                "value": function getBoundingClientRect(this: Element) {
+                    const rects_patched: DOMRect[] = [];
 
-                    return {
-                        "left": left / scaleFactor,
-                        "top": top / scaleFactor,
-                        "width": width / scaleFactor,
-                        "height": height / scaleFactor,
-                        "right": right / scaleFactor,
-                        "bottom": bottom / scaleFactor
-                    };
+                    const rects = realGetClientRects.call(this);
+
+                    for (let i = 0; i < rects.length; i++) {
+                        const rect = rects.item(i);
+                        assert(rect !== null);
+                        rects_patched.push(getPatchedDomRect(rect));
+                    }
+
+                    const fakeDomRectList = Object.create(DOMRectList.prototype);
+
+                    for (let i = 0; i < rects_patched.length; i++) {
+                        Object.defineProperty(fakeDomRectList, `${i}`, {
+                            "enumerable": false,
+                            "configurable": true,
+                            "get": () => rects_patched[i]
+                        });
+                    }
+
+                    Object.defineProperty(fakeDomRectList, Symbol.iterator, {
+                        "enumerable": false,
+                        "configurable": true,
+                        "get": () => rects_patched[Symbol.iterator]
+                    });
+
+                    Object.defineProperty(fakeDomRectList, "length", {
+                        "enumerable": false,
+                        "configurable": true,
+                        "get": () => rects_patched.length
+                    });
+
+                    Object.defineProperty(fakeDomRectList, "item", {
+                        "value": function (index: number) {
+                            return rects_patched[index];
+                        },
+                        "enumerable": true,
+                        "configurable": true,
+                        "writable": true
+                    });
+
+                    return fakeDomRectList;
                 },
                 "enumerable": true,
                 "configurable": true,
