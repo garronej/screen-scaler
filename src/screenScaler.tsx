@@ -88,7 +88,19 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             },
             "MouseEvent.prototype": {
                 "clientX": getOwnPropertyDescriptor(MouseEvent.prototype, "clientX"),
-                "clientY": getOwnPropertyDescriptor(MouseEvent.prototype, "clientY")
+                "clientY": getOwnPropertyDescriptor(MouseEvent.prototype, "clientY"),
+                "x": getOwnPropertyDescriptor(MouseEvent.prototype, "x"),
+                "y": getOwnPropertyDescriptor(MouseEvent.prototype, "y"),
+                "pageX": getOwnPropertyDescriptor(MouseEvent.prototype, "pageX"),
+                "pageY": getOwnPropertyDescriptor(MouseEvent.prototype, "pageY"),
+                "layerX": getOwnPropertyDescriptor(MouseEvent.prototype, "layerX"),
+                "layerY": getOwnPropertyDescriptor(MouseEvent.prototype, "layerY"),
+                "offsetX": getOwnPropertyDescriptor(MouseEvent.prototype, "offsetX"),
+                "offsetY": getOwnPropertyDescriptor(MouseEvent.prototype, "offsetY"),
+                "screenX": getOwnPropertyDescriptor(MouseEvent.prototype, "screenX"),
+                "screenY": getOwnPropertyDescriptor(MouseEvent.prototype, "screenY"),
+                "movementX": getOwnPropertyDescriptor(MouseEvent.prototype, "movementX"),
+                "movementY": getOwnPropertyDescriptor(MouseEvent.prototype, "movementY")
             }
         };
 
@@ -352,6 +364,20 @@ export function enableScreenScaler(params: ScreenScalerParams): {
     {
         const getScaleFactor = () => (evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor);
 
+        const getColorCyclical = (() => {
+            const colors = ["red", "green", "blue", "yellow", "purple", "orange", "pink"];
+
+            let i = 0;
+
+            return () => {
+                const color = colors[i];
+
+                i = (i + 1) % colors.length;
+
+                return color;
+            };
+        })();
+
         function getPatchedDomRect(domRect: {
             x: number;
             y: number;
@@ -414,8 +440,34 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                     "enumerable": true,
                     "configurable": true,
                     "get": () => domRect.bottom / getScaleFactor()
+                },
+                "screenScalerPatched": {
+                    "enumerable": true,
+                    "configurable": false,
+                    "writable": false,
+                    "value": "yes - DOMRect"
                 }
             });
+
+            {
+                const element = document.createElement("div");
+
+                const r = domRectPatched;
+
+                element.style.width = `${r.width}px`;
+                element.style.height = `${r.height}px`;
+                element.style.position = "fixed";
+                element.style.left = `${r.left}px`;
+                element.style.top = `${r.top}px`;
+                const color = getColorCyclical();
+                element.style.boxSizing = "border-box";
+                element.style.border = `1px solid ${color}`;
+                //element.style.backgroundColor = color;
+                element.style.pointerEvents = "none";
+                //element.style.zIndex = "-100000";
+
+                document.body.appendChild(element);
+            }
 
             return domRectPatched;
         }
@@ -453,6 +505,12 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                     "value": function item(index: number) {
                         return arrayOfPatchedDomRect[index] ?? null;
                     }
+                },
+                "screenScalerPatched": {
+                    "enumerable": true,
+                    "configurable": false,
+                    "writable": false,
+                    "value": "yes - DOMRectList"
                 }
             };
 
@@ -567,6 +625,8 @@ export function enableScreenScaler(params: ScreenScalerParams): {
 
                 const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
+                alert("resize observer");
+
                 return {
                     "left": left / scaleFactor,
                     "top": top / scaleFactor,
@@ -583,12 +643,47 @@ export function enableScreenScaler(params: ScreenScalerParams): {
     {
         const { get: realClientXGetter } =
             Object.getOwnPropertyDescriptor(MouseEvent.prototype, "clientX") ?? {};
+        const { get: realXGetter } = Object.getOwnPropertyDescriptor(MouseEvent.prototype, "x") ?? {};
+        const { get: realPageXGetter } =
+            Object.getOwnPropertyDescriptor(MouseEvent.prototype, "pageX") ?? {};
+        const { get: realLayerXGetter } =
+            Object.getOwnPropertyDescriptor(MouseEvent.prototype, "layerX") ?? {};
+        const { get: realOffsetXGetter } =
+            Object.getOwnPropertyDescriptor(MouseEvent.prototype, "offsetX") ?? {};
+        const { get: realScreenXGetter } =
+            Object.getOwnPropertyDescriptor(MouseEvent.prototype, "screenX") ?? {};
+        const { get: realMovementXGetter } =
+            Object.getOwnPropertyDescriptor(MouseEvent.prototype, "movementX") ?? {};
+
+        assert(realClientXGetter !== undefined);
+        assert(realXGetter !== undefined);
+        assert(realPageXGetter !== undefined);
+        assert(realLayerXGetter !== undefined);
+        assert(realOffsetXGetter !== undefined);
+        assert(realScreenXGetter !== undefined);
+        assert(realMovementXGetter !== undefined);
 
         const { get: realClientYGetter } =
             Object.getOwnPropertyDescriptor(MouseEvent.prototype, "clientY") ?? {};
+        const { get: realYGetter } = Object.getOwnPropertyDescriptor(MouseEvent.prototype, "y") ?? {};
+        const { get: realPageYGetter } =
+            Object.getOwnPropertyDescriptor(MouseEvent.prototype, "pageY") ?? {};
+        const { get: realLayerYGetter } =
+            Object.getOwnPropertyDescriptor(MouseEvent.prototype, "layerY") ?? {};
+        const { get: realOffsetYGetter } =
+            Object.getOwnPropertyDescriptor(MouseEvent.prototype, "offsetY") ?? {};
+        const { get: realScreenYGetter } =
+            Object.getOwnPropertyDescriptor(MouseEvent.prototype, "screenY") ?? {};
+        const { get: realMovementYGetter } =
+            Object.getOwnPropertyDescriptor(MouseEvent.prototype, "movementY") ?? {};
 
-        assert(realClientXGetter !== undefined);
         assert(realClientYGetter !== undefined);
+        assert(realYGetter !== undefined);
+        assert(realPageYGetter !== undefined);
+        assert(realLayerYGetter !== undefined);
+        assert(realOffsetYGetter !== undefined);
+        assert(realScreenYGetter !== undefined);
+        assert(realMovementYGetter !== undefined);
 
         Object.defineProperties(MouseEvent.prototype, {
             "clientX": {
@@ -601,11 +696,131 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 "enumerable": true,
                 "set": undefined
             },
+            "x": {
+                "get": function (this: MouseEvent) {
+                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+
+                    return realXGetter.call(this) / scaleFactor;
+                },
+                "configurable": true,
+                "enumerable": true,
+                "set": undefined
+            },
+            "pageX": {
+                "get": function (this: MouseEvent) {
+                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+
+                    return realPageXGetter.call(this) / scaleFactor;
+                },
+                "configurable": true,
+                "enumerable": true,
+                "set": undefined
+            },
+            "layerX": {
+                "get": function (this: MouseEvent) {
+                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+
+                    return realLayerXGetter.call(this) / scaleFactor;
+                },
+                "configurable": true,
+                "enumerable": true,
+                "set": undefined
+            },
+            "offsetX": {
+                "get": function (this: MouseEvent) {
+                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+
+                    return realOffsetXGetter.call(this) / scaleFactor;
+                },
+                "configurable": true,
+                "enumerable": true,
+                "set": undefined
+            },
+            "screenX": {
+                "get": function (this: MouseEvent) {
+                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+
+                    return realScreenXGetter.call(this) / scaleFactor;
+                },
+                "configurable": true,
+                "enumerable": true,
+                "set": undefined
+            },
+            "movementX": {
+                "get": function (this: MouseEvent) {
+                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+
+                    return realMovementXGetter.call(this) / scaleFactor;
+                },
+                "configurable": true,
+                "enumerable": true,
+                "set": undefined
+            },
             "clientY": {
                 "get": function (this: MouseEvent) {
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
                     return realClientYGetter.call(this) / scaleFactor;
+                },
+                "configurable": true,
+                "enumerable": true,
+                "set": undefined
+            },
+            "y": {
+                "get": function (this: MouseEvent) {
+                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+
+                    return realYGetter.call(this) / scaleFactor;
+                },
+                "configurable": true,
+                "enumerable": true,
+                "set": undefined
+            },
+            "pageY": {
+                "get": function (this: MouseEvent) {
+                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+
+                    return realPageYGetter.call(this) / scaleFactor;
+                },
+                "configurable": true,
+                "enumerable": true,
+                "set": undefined
+            },
+            "layerY": {
+                "get": function (this: MouseEvent) {
+                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+
+                    return realLayerYGetter.call(this) / scaleFactor;
+                },
+                "configurable": true,
+                "enumerable": true,
+                "set": undefined
+            },
+            "offsetY": {
+                "get": function (this: MouseEvent) {
+                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+
+                    return realOffsetYGetter.call(this) / scaleFactor;
+                },
+                "configurable": true,
+                "enumerable": true,
+                "set": undefined
+            },
+            "screenY": {
+                "get": function (this: MouseEvent) {
+                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+
+                    return realScreenYGetter.call(this) / scaleFactor;
+                },
+                "configurable": true,
+                "enumerable": true,
+                "set": undefined
+            },
+            "movementY": {
+                "get": function (this: MouseEvent) {
+                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+
+                    return realMovementYGetter.call(this) / scaleFactor;
                 },
                 "configurable": true,
                 "enumerable": true,
