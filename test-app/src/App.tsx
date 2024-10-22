@@ -2,7 +2,7 @@ import { BasicSelect } from "./BasicSelect";
 import Button from "@mui/material/Button";
 //import "./main.css";
 
-export function App() {
+export default function App() {
 
     return (
             <div style={{

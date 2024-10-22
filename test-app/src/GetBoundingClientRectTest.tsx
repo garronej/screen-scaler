@@ -2,21 +2,21 @@
 import { useEffect, useState } from "react";
 
 
-export function GetBoundingClientRectTest() {
+export default function GetBoundingClientRectTest() {
 
-    const [ref, setRef] = useState<React.ElementRef<"div"> | null>(null);
+    const [element, setElement] = useState<React.ElementRef<"div"> | null>(null);
     const [domRect, setDomRect] = useState<DOMRect | undefined>(undefined);
 
     useEffect(() => {
-        if (ref === null) {
+        if (element === null) {
             return;
         }
 
-        const domRect = ref.getBoundingClientRect();
+        const domRect = element.getBoundingClientRect();
 
         setDomRect(domRect);
 
-    }, [ref]);
+    }, [element]);
 
 
 
@@ -30,7 +30,7 @@ export function GetBoundingClientRectTest() {
             }}
         >
             <div
-                ref={setRef}
+                ref={setElement}
                 style={{
                     "position": "absolute",
                     "top": 10,

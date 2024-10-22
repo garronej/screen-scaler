@@ -452,7 +452,8 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             {
                 const element = document.createElement("div");
 
-                const r = domRectPatched;
+                //const r = domRectPatched;
+                const r = domRect;
 
                 element.style.width = `${r.width}px`;
                 element.style.height = `${r.height}px`;
@@ -690,7 +691,26 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 "get": function (this: MouseEvent) {
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
-                    return realClientXGetter.call(this) / scaleFactor;
+                    const real = realClientXGetter.call(this);
+
+                    const patched = real / scaleFactor;
+
+                    {
+                        const v = real;
+
+                        const element = document.createElement("div");
+
+                        element.style.width = "1px";
+                        element.style.height = "50px";
+                        element.style.position = "fixed";
+                        element.style.left = `${v}px`;
+                        element.style.top = "0px";
+                        element.style.backgroundColor = "red";
+
+                        document.body.appendChild(element);
+                    }
+
+                    return real;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -700,7 +720,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 "get": function (this: MouseEvent) {
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
-                    return realXGetter.call(this) / scaleFactor;
+                    return realXGetter.call(this) / scaleFactor - 100;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -710,7 +730,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 "get": function (this: MouseEvent) {
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
-                    return realPageXGetter.call(this) / scaleFactor;
+                    return realPageXGetter.call(this) / scaleFactor - 100;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -720,7 +740,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 "get": function (this: MouseEvent) {
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
-                    return realLayerXGetter.call(this) / scaleFactor;
+                    return realLayerXGetter.call(this) / scaleFactor - 100;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -730,7 +750,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 "get": function (this: MouseEvent) {
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
-                    return realOffsetXGetter.call(this) / scaleFactor;
+                    return realOffsetXGetter.call(this) / scaleFactor - 100;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -740,7 +760,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 "get": function (this: MouseEvent) {
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
-                    return realScreenXGetter.call(this) / scaleFactor;
+                    return realScreenXGetter.call(this) / scaleFactor - 100;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -750,7 +770,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 "get": function (this: MouseEvent) {
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
-                    return realMovementXGetter.call(this) / scaleFactor;
+                    return realMovementXGetter.call(this) / scaleFactor - 100;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -760,7 +780,26 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 "get": function (this: MouseEvent) {
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
-                    return realClientYGetter.call(this) / scaleFactor;
+                    const real = realClientYGetter.call(this);
+
+                    const patched = real / scaleFactor;
+
+                    {
+                        const v = real;
+
+                        const element = document.createElement("div");
+
+                        element.style.width = "50px";
+                        element.style.height = "1px";
+                        element.style.position = "fixed";
+                        element.style.top = `${v}px`;
+                        element.style.left = "0px";
+                        element.style.backgroundColor = "red";
+
+                        document.body.appendChild(element);
+                    }
+
+                    return patched;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -770,7 +809,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 "get": function (this: MouseEvent) {
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
-                    return realYGetter.call(this) / scaleFactor;
+                    return realYGetter.call(this) / scaleFactor - 100;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -780,7 +819,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 "get": function (this: MouseEvent) {
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
-                    return realPageYGetter.call(this) / scaleFactor;
+                    return realPageYGetter.call(this) / scaleFactor - 100;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -790,7 +829,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 "get": function (this: MouseEvent) {
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
-                    return realLayerYGetter.call(this) / scaleFactor;
+                    return realLayerYGetter.call(this) / scaleFactor - 100;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -800,7 +839,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 "get": function (this: MouseEvent) {
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
-                    return realOffsetYGetter.call(this) / scaleFactor;
+                    return realOffsetYGetter.call(this) / scaleFactor - 100;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -810,7 +849,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 "get": function (this: MouseEvent) {
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
-                    return realScreenYGetter.call(this) / scaleFactor;
+                    return realScreenYGetter.call(this) / scaleFactor - 100;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -820,7 +859,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 "get": function (this: MouseEvent) {
                     const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
 
-                    return realMovementYGetter.call(this) / scaleFactor;
+                    return realMovementYGetter.call(this) / scaleFactor - 100;
                 },
                 "configurable": true,
                 "enumerable": true,
