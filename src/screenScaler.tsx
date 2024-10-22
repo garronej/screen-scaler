@@ -362,26 +362,38 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             right: number;
             bottom: number;
         }): DOMRect {
-            return Object.create(DOMRect.prototype, {
+            const getX_patched = () => domRect.x / getScaleFactor();
+            const getY_patched = () => domRect.y / getScaleFactor();
+            const getWidth_patched = () => domRect.width / getScaleFactor();
+            const getHeight_patched = () => domRect.height / getScaleFactor();
+
+            const domRectPatched = new DOMRect(
+                getX_patched(),
+                getY_patched(),
+                getWidth_patched(),
+                getHeight_patched()
+            );
+
+            Object.defineProperties(domRectPatched, {
                 "x": {
                     "enumerable": true,
                     "configurable": true,
-                    "get": () => domRect.x / getScaleFactor()
+                    "get": getX_patched
                 },
                 "y": {
                     "enumerable": true,
                     "configurable": true,
-                    "get": () => domRect.y / getScaleFactor()
+                    "get": getY_patched
                 },
                 "width": {
                     "enumerable": true,
                     "configurable": true,
-                    "get": () => domRect.width / getScaleFactor()
+                    "get": getWidth_patched
                 },
                 "height": {
                     "enumerable": true,
                     "configurable": true,
-                    "get": () => domRect.height / getScaleFactor()
+                    "get": getHeight_patched
                 },
                 "left": {
                     "enumerable": true,
@@ -404,6 +416,8 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                     "get": () => domRect.bottom / getScaleFactor()
                 }
             });
+
+            return domRectPatched;
         }
 
         function getPatchedDomRectList(domRectList: {
