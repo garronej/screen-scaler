@@ -404,7 +404,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
 
         assert(realContentRectGetter !== undefined);
 
-        Object.defineProperty(ResizeObserver.prototype, "contentRect", {
+        Object.defineProperty(ResizeObserverEntry.prototype, "contentRect", {
             "configurable": true,
             "enumerable": true,
             "set": undefined,
