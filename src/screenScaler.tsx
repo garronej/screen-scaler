@@ -2,6 +2,7 @@ import { assert } from "tsafe/assert";
 import { Evt, type Ctx } from "evt";
 import { onlyIfChanged } from "evt/operators/onlyIfChanged";
 import { getOwnPropertyDescriptor } from "./tools/getOwnPropertyDescriptor";
+import { injectPerformActionWithoutScreenScalerImpl } from "./performActionWithoutScreenScaler";
 
 let ctx: Ctx | undefined = undefined;
 
@@ -59,67 +60,103 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                       }
         };
 
-        const propertyDescriptors = {
-            "window": {
-                "innerWidth": getOwnPropertyDescriptor(window, "innerWidth"),
-                "innerHeight": getOwnPropertyDescriptor(window, "innerHeight"),
-                "visualViewport": getOwnPropertyDescriptor(window, "visualViewport")
+        const propertyDescriptors = [
+            {
+                "o": window,
+                "properties": {
+                    "innerWidth": getOwnPropertyDescriptor(window, "innerWidth"),
+                    "innerHeight": getOwnPropertyDescriptor(window, "innerHeight"),
+                    "visualViewport": getOwnPropertyDescriptor(window, "visualViewport"),
+                    "ResizeObserver": getOwnPropertyDescriptor(window, "ResizeObserver")
+                }
             },
-            "Element.prototype": {
-                "getBoundingClientRect": getOwnPropertyDescriptor(
-                    Element.prototype,
-                    "getBoundingClientRect"
-                ),
-                "getClientRects": getOwnPropertyDescriptor(Element.prototype, "getClientRects"),
-                "clientLeft": getOwnPropertyDescriptor(Element.prototype, "clientLeft"),
-                "clientTop": getOwnPropertyDescriptor(Element.prototype, "clientTop"),
-                "clientWidth": getOwnPropertyDescriptor(Element.prototype, "clientWidth"),
-                "clientHeight": getOwnPropertyDescriptor(Element.prototype, "clientHeight")
+            {
+                "o": Element.prototype,
+                "properties": {
+                    "getBoundingClientRect": getOwnPropertyDescriptor(
+                        Element.prototype,
+                        "getBoundingClientRect"
+                    ),
+                    "getClientRects": getOwnPropertyDescriptor(Element.prototype, "getClientRects"),
+                    "clientLeft": getOwnPropertyDescriptor(Element.prototype, "clientLeft"),
+                    "clientTop": getOwnPropertyDescriptor(Element.prototype, "clientTop"),
+                    "clientWidth": getOwnPropertyDescriptor(Element.prototype, "clientWidth"),
+                    "clientHeight": getOwnPropertyDescriptor(Element.prototype, "clientHeight")
+                }
             },
-            "Range.prototype": {
-                "getBoundingClientRect": getOwnPropertyDescriptor(
-                    Range.prototype,
-                    "getBoundingClientRect"
-                ),
-                "getClientRects": getOwnPropertyDescriptor(Range.prototype, "getClientRects")
+            {
+                "o": Range.prototype,
+                "properties": {
+                    "getBoundingClientRect": getOwnPropertyDescriptor(
+                        Range.prototype,
+                        "getBoundingClientRect"
+                    ),
+                    "getClientRects": getOwnPropertyDescriptor(Range.prototype, "getClientRects")
+                }
             },
-            "ResizeObserverEntry.prototype": {
-                "contentRect": getOwnPropertyDescriptor(ResizeObserverEntry.prototype, "contentRect")
+            {
+                "o": ResizeObserverEntry.prototype,
+                "properties": {
+                    "contentRect": getOwnPropertyDescriptor(ResizeObserverEntry.prototype, "contentRect")
+                }
             },
-            "MouseEvent.prototype": {
-                "clientX": getOwnPropertyDescriptor(MouseEvent.prototype, "clientX"),
-                "clientY": getOwnPropertyDescriptor(MouseEvent.prototype, "clientY"),
-                "x": getOwnPropertyDescriptor(MouseEvent.prototype, "x"),
-                "y": getOwnPropertyDescriptor(MouseEvent.prototype, "y"),
-                "pageX": getOwnPropertyDescriptor(MouseEvent.prototype, "pageX"),
-                "pageY": getOwnPropertyDescriptor(MouseEvent.prototype, "pageY"),
-                "layerX": getOwnPropertyDescriptor(MouseEvent.prototype, "layerX"),
-                "layerY": getOwnPropertyDescriptor(MouseEvent.prototype, "layerY"),
-                "offsetX": getOwnPropertyDescriptor(MouseEvent.prototype, "offsetX"),
-                "offsetY": getOwnPropertyDescriptor(MouseEvent.prototype, "offsetY"),
-                "screenX": getOwnPropertyDescriptor(MouseEvent.prototype, "screenX"),
-                "screenY": getOwnPropertyDescriptor(MouseEvent.prototype, "screenY"),
-                "movementX": getOwnPropertyDescriptor(MouseEvent.prototype, "movementX"),
-                "movementY": getOwnPropertyDescriptor(MouseEvent.prototype, "movementY")
+            {
+                "o": MouseEvent.prototype,
+                "properties": {
+                    "clientX": getOwnPropertyDescriptor(MouseEvent.prototype, "clientX"),
+                    "clientY": getOwnPropertyDescriptor(MouseEvent.prototype, "clientY"),
+                    "x": getOwnPropertyDescriptor(MouseEvent.prototype, "x"),
+                    "y": getOwnPropertyDescriptor(MouseEvent.prototype, "y"),
+                    "pageX": getOwnPropertyDescriptor(MouseEvent.prototype, "pageX"),
+                    "pageY": getOwnPropertyDescriptor(MouseEvent.prototype, "pageY"),
+                    "layerX": getOwnPropertyDescriptor(MouseEvent.prototype, "layerX"),
+                    "layerY": getOwnPropertyDescriptor(MouseEvent.prototype, "layerY"),
+                    "offsetX": getOwnPropertyDescriptor(MouseEvent.prototype, "offsetX"),
+                    "offsetY": getOwnPropertyDescriptor(MouseEvent.prototype, "offsetY"),
+                    "screenX": getOwnPropertyDescriptor(MouseEvent.prototype, "screenX"),
+                    "screenY": getOwnPropertyDescriptor(MouseEvent.prototype, "screenY"),
+                    "movementX": getOwnPropertyDescriptor(MouseEvent.prototype, "movementX"),
+                    "movementY": getOwnPropertyDescriptor(MouseEvent.prototype, "movementY")
+                }
             }
-        };
+        ] as const;
 
-        const RealResizeObserver = window.ResizeObserver;
+        function disableScreenScaler() {
+            const cleanups: (() => void)[] = [];
+
+            for (const { o, properties } of propertyDescriptors) {
+                for (const propertyName of Object.keys(properties)) {
+                    const pd = getOwnPropertyDescriptor(o, propertyName);
+
+                    cleanups.push(() => Object.defineProperty(o, propertyName, pd));
+                }
+
+                Object.defineProperties(o, properties);
+            }
+
+            const reEnableScreenScaler = () => {
+                cleanups.forEach(cleanup => cleanup());
+            };
+
+            return { reEnableScreenScaler };
+        }
+
+        {
+            function performActionWithoutScreenScaler<T>(action: () => T): T {
+                const { reEnableScreenScaler } = disableScreenScaler();
+
+                const result = action();
+
+                reEnableScreenScaler();
+
+                return result;
+            }
+
+            injectPerformActionWithoutScreenScalerImpl(performActionWithoutScreenScaler);
+        }
 
         ctx.evtDoneOrAborted.attachOnce(() => {
-            Object.defineProperties(window, propertyDescriptors.window);
-
-            Object.defineProperties(Element.prototype, propertyDescriptors["Element.prototype"]);
-            Object.defineProperties(Element.prototype, propertyDescriptors["Range.prototype"]);
-            Object.defineProperty(
-                ResizeObserverEntry.prototype,
-                "contentRect",
-                propertyDescriptors["ResizeObserverEntry.prototype"].contentRect
-            );
-
-            Object.defineProperties(MouseEvent.prototype, propertyDescriptors["MouseEvent.prototype"]);
-
-            window.ResizeObserver = RealResizeObserver;
+            disableScreenScaler();
 
             Object.assign(document.body.style, initialStyles.body);
             Object.assign(document.documentElement.style, initialStyles.html);
@@ -361,23 +398,9 @@ export function enableScreenScaler(params: ScreenScalerParams): {
         }
     });
 
+    const getScaleFactor = () => (evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor);
+
     {
-        const getScaleFactor = () => (evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor);
-
-        const getColorCyclical = (() => {
-            const colors = ["red", "green", "blue", "yellow", "purple", "orange", "pink"];
-
-            let i = 0;
-
-            return () => {
-                const color = colors[i];
-
-                i = (i + 1) % colors.length;
-
-                return color;
-            };
-        })();
-
         function getPatchedDomRect(domRect: {
             x: number;
             y: number;
@@ -448,27 +471,6 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                     "value": "yes - DOMRect"
                 }
             });
-
-            {
-                const element = document.createElement("div");
-
-                //const r = domRectPatched;
-                const r = domRect;
-
-                element.style.width = `${r.width}px`;
-                element.style.height = `${r.height}px`;
-                element.style.position = "fixed";
-                element.style.left = `${r.left}px`;
-                element.style.top = `${r.top}px`;
-                const color = getColorCyclical();
-                element.style.boxSizing = "border-box";
-                element.style.border = `1px solid ${color}`;
-                //element.style.backgroundColor = color;
-                element.style.pointerEvents = "none";
-                //element.style.zIndex = "-100000";
-
-                document.body.appendChild(element);
-            }
 
             return domRectPatched;
         }
@@ -547,8 +549,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                     "configurable": true,
                     "writable": false,
                     "value": function getClientRects(this: Element) {
-                        const domRectList = realGetClientRects.call(this);
-                        return getPatchedDomRectList(domRectList);
+                        return getPatchedDomRectList(realGetClientRects.call(this));
                     }
                 },
                 "clientLeft": {
@@ -602,8 +603,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                     "configurable": true,
                     "writable": false,
                     "value": function getClientRects(this: Range) {
-                        const domRectList = realGetClientRects.call(this);
-                        return getPatchedDomRectList(domRectList);
+                        return getPatchedDomRectList(realGetClientRects.call(this));
                     }
                 }
             });
@@ -624,9 +624,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             "get": function (this: ResizeObserverEntry) {
                 const { left, top, width, height, right, bottom } = realContentRectGetter.call(this);
 
-                const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
-
-                alert("resize observer");
+                const scaleFactor = getScaleFactor();
 
                 return {
                     "left": left / scaleFactor,
@@ -689,28 +687,11 @@ export function enableScreenScaler(params: ScreenScalerParams): {
         Object.defineProperties(MouseEvent.prototype, {
             "clientX": {
                 "get": function (this: MouseEvent) {
-                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+                    const scaleFactor = getScaleFactor();
 
                     const real = realClientXGetter.call(this);
 
-                    const patched = real / scaleFactor;
-
-                    {
-                        const v = real;
-
-                        const element = document.createElement("div");
-
-                        element.style.width = "1px";
-                        element.style.height = "50px";
-                        element.style.position = "fixed";
-                        element.style.left = `${v}px`;
-                        element.style.top = "0px";
-                        element.style.backgroundColor = "red";
-
-                        document.body.appendChild(element);
-                    }
-
-                    return real;
+                    return real / scaleFactor;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -718,9 +699,9 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             },
             "x": {
                 "get": function (this: MouseEvent) {
-                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+                    const scaleFactor = getScaleFactor();
 
-                    return realXGetter.call(this) / scaleFactor - 100;
+                    return realXGetter.call(this) / scaleFactor;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -728,9 +709,9 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             },
             "pageX": {
                 "get": function (this: MouseEvent) {
-                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+                    const scaleFactor = getScaleFactor();
 
-                    return realPageXGetter.call(this) / scaleFactor - 100;
+                    return realPageXGetter.call(this) / scaleFactor;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -738,9 +719,9 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             },
             "layerX": {
                 "get": function (this: MouseEvent) {
-                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+                    const scaleFactor = getScaleFactor();
 
-                    return realLayerXGetter.call(this) / scaleFactor - 100;
+                    return realLayerXGetter.call(this) / scaleFactor;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -748,9 +729,9 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             },
             "offsetX": {
                 "get": function (this: MouseEvent) {
-                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+                    const scaleFactor = getScaleFactor();
 
-                    return realOffsetXGetter.call(this) / scaleFactor - 100;
+                    return realOffsetXGetter.call(this) / scaleFactor;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -758,9 +739,9 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             },
             "screenX": {
                 "get": function (this: MouseEvent) {
-                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+                    const scaleFactor = getScaleFactor();
 
-                    return realScreenXGetter.call(this) / scaleFactor - 100;
+                    return realScreenXGetter.call(this) / scaleFactor;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -768,9 +749,9 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             },
             "movementX": {
                 "get": function (this: MouseEvent) {
-                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+                    const scaleFactor = getScaleFactor();
 
-                    return realMovementXGetter.call(this) / scaleFactor - 100;
+                    return realMovementXGetter.call(this) / scaleFactor;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -778,28 +759,11 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             },
             "clientY": {
                 "get": function (this: MouseEvent) {
-                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+                    const scaleFactor = getScaleFactor();
 
                     const real = realClientYGetter.call(this);
 
-                    const patched = real / scaleFactor;
-
-                    {
-                        const v = real;
-
-                        const element = document.createElement("div");
-
-                        element.style.width = "50px";
-                        element.style.height = "1px";
-                        element.style.position = "fixed";
-                        element.style.top = `${v}px`;
-                        element.style.left = "0px";
-                        element.style.backgroundColor = "red";
-
-                        document.body.appendChild(element);
-                    }
-
-                    return patched;
+                    return real / scaleFactor;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -807,9 +771,9 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             },
             "y": {
                 "get": function (this: MouseEvent) {
-                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+                    const scaleFactor = getScaleFactor();
 
-                    return realYGetter.call(this) / scaleFactor - 100;
+                    return realYGetter.call(this) / scaleFactor;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -817,9 +781,9 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             },
             "pageY": {
                 "get": function (this: MouseEvent) {
-                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+                    const scaleFactor = getScaleFactor();
 
-                    return realPageYGetter.call(this) / scaleFactor - 100;
+                    return realPageYGetter.call(this) / scaleFactor;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -827,9 +791,9 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             },
             "layerY": {
                 "get": function (this: MouseEvent) {
-                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+                    const scaleFactor = getScaleFactor();
 
-                    return realLayerYGetter.call(this) / scaleFactor - 100;
+                    return realLayerYGetter.call(this) / scaleFactor;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -837,9 +801,9 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             },
             "offsetY": {
                 "get": function (this: MouseEvent) {
-                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+                    const scaleFactor = getScaleFactor();
 
-                    return realOffsetYGetter.call(this) / scaleFactor - 100;
+                    return realOffsetYGetter.call(this) / scaleFactor;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -847,9 +811,9 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             },
             "screenY": {
                 "get": function (this: MouseEvent) {
-                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+                    const scaleFactor = getScaleFactor();
 
-                    return realScreenYGetter.call(this) / scaleFactor - 100;
+                    return realScreenYGetter.call(this) / scaleFactor;
                 },
                 "configurable": true,
                 "enumerable": true,
@@ -857,9 +821,9 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             },
             "movementY": {
                 "get": function (this: MouseEvent) {
-                    const scaleFactor = evtState.state.isOutOfRange ? 1 : evtState.state.scaleFactor;
+                    const scaleFactor = getScaleFactor();
 
-                    return realMovementYGetter.call(this) / scaleFactor - 100;
+                    return realMovementYGetter.call(this) / scaleFactor;
                 },
                 "configurable": true,
                 "enumerable": true,

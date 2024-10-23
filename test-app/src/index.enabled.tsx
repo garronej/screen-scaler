@@ -2,10 +2,10 @@ import React, { Suspense, lazy } from 'react';
 import ReactDOM from 'react-dom/client';
 import { enableScreenScaler } from "screen-scaler/react";
 //const GetBoundingClientRectTest = lazy(()=> import("./GetBoundingClientRectTest"));
-//const App = lazy(() => import('./App'));
-const Code = lazy(() => import('./Code'));
+const App = lazy(() => import('./App'));
+//const Code = lazy(() => import('./Code'));
 
-delete (window as any).EditContext;
+//delete (window as any).EditContext;
 
 const { 
   ScreenScalerOutOfRangeFallbackProvider, 
@@ -15,7 +15,7 @@ const {
     "targetWindowInnerWidth": ({ zoomFactor, isPortraitOrientation, actualWindowInnerWidth }) =>
         isPortraitOrientation ?
             undefined :
-            1600 * zoomFactor,
+            1500 * zoomFactor,
     //"targetWindowInnerWidth": ({ actualWindowInnerWidth }) => actualWindowInnerWidth,
     "rootDivId": "root"
 });
@@ -30,8 +30,8 @@ root.render(
       fallback={<h1>Rotate your phone</h1>}
     >
       <Suspense>
-        <Code />
-        {/*<App />*/}
+        <App />
+        {/*<Code />*/}
         {/*<GetBoundingClientRectTest />*/}
       </Suspense>
     </ScreenScalerOutOfRangeFallbackProvider>
