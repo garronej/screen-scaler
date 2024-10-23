@@ -17,7 +17,7 @@ https://github.com/garronej/screen-scaler/assets/6702424/d15945b2-e1ac-4e93-a08f
 
 <a href="https://youtu.be/Ou2I4oWuUj8?si=Gftx15nVVXWSvzxH&t=268">
   <img width="1712" alt="image" src="https://github.com/garronej/screen-scaler/assets/6702424/0845ead0-1bbb-4fa2-80c2-5aa919dd2717">
-</a>  
+</a>
 
 ## Motivation and Warning
 
