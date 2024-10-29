@@ -4,6 +4,8 @@ import { onlyIfChanged } from "evt/operators/onlyIfChanged";
 import { injectPerformActionWithoutScreenScalerImpl } from "./performActionWithoutScreenScaler";
 import { exclude } from "tsafe/exclude";
 
+export const GLOBAL_NAME = "__screenScaler";
+
 let ctx: Ctx | undefined = undefined;
 
 export type ScreenScalerParams = {
@@ -22,6 +24,9 @@ export function enableScreenScaler(params: ScreenScalerParams): {
     disableScreenScaler: () => void;
 } {
     ctx?.done();
+
+    // @ts-expect-error
+    window[GLOBAL_NAME] = true;
 
     ctx = Evt.newCtx();
 
