@@ -33,23 +33,47 @@ Responsive design remains the gold standard for creating web applications that o
 -   🛠️ Offers flexibility by enabling scaling only for specific screen size ranges. For instance, if your app renders well on large screens but breaks on smaller ones, you can activate scaling only for screen widths below `1000px`.
 -   ♿ Preserves accessibility features, allowing users to zoom in and out with `ctrl + mouse wheel` or `⌘ + '+/-'`, provided you enable this functionality (and you should).
 
+## Installation
+
+```bash
+npm install --save screen-scaler evt
+```
+
 ## Usage
 
 Make it so that your app is always rendered as if the user had a screen resolution width of 1920.
+
+Screen scaler must run before any other UI related code runs, you should first enable screen-scaler
+then load your app asynchronously.
+
+`src/main.tsx`
 
 ```tsx
 import { enableScreenScaler } from "screen-scaler";
 
 enableScreenScaler({
     // The zoom factor is for supporting when the user zooms in or out (ctrl + mouse wheel or ⌘ + '+' or ⌘ + '-') ...
-    targetWindowInnerWidth: ({ zoomFactor }) => 1920 * zoomFactor,
+    // You can prevent the users from being able to zoom with `()=> 1920`
+    getTargetWindowInnerWidth: ({ zoomFactor }) => 1920 * zoomFactor,
 
-    // If you don't want to enables your user to zoom you can provide an absolute value
-    //targetWindowInnerWidth: 1920
-
-    // This is the id of the root div of your app. With modern frameworks it's usually "root" or "app".
-    rootDivId: "app"
+    // This is the id of the root div of your app. With modern frameworks, it's "root" by default in Vite projects.
+    rootDivId: "root"
 });
+
+import("./main.lazy");
+```
+
+`src/main.lazy.tsx`
+
+```tsx
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+
+createRoot(document.getElementById("root")!).render(
+    <StrictMode>
+        <App />
+    </StrictMode>
+);
 ```
 
 ## Run the test App
@@ -98,29 +122,44 @@ In this case, you have two options:
 1: Implement a portrait mode version of your app.
 2: Tell your user to rotate their device:
 
-```tsx
-import { enableScreenScaler } from "screen-scaler/react";
+`src/main.tsx`
 
-const { ScreenScalerOutOfRangeFallbackProvider } = enableScreenScaler({
-    rootDivId: "root",
-    targetWindowInnerWidth: ({ zoomFactor, isPortraitOrientation }) =>
-        isPortraitOrientation ? undefined : 1920 * zoomFactor
+```tsx
+import { enableScreenScaler } from "screen-scaler";
+
+enableScreenScaler({
+    // The zoom factor is for supporting when the user zooms in or out (ctrl + mouse wheel or ⌘ + '+' or ⌘ + '-') ...
+    getTargetWindowInnerWidth: ({ zoomFactor }) => 1920 * zoomFactor,
+
+    // If you don't want to enables your user to zoom you can provide an absolute value
+    //targetWindowInnerWidth: 1920
+
+    // This is the id of the root div of your app. With modern frameworks it's usually "root" or "app".
+    rootDivId: "app"
 });
 
-export function App() {
-    return (
-        <ScreenScalerOutOfRangeFallbackProvider
-            fallback={<h1>Please Rotate your phone, this app does not render well in portrait mode.</h1>}
-        >
-            {/* Your app here */}
-        </ScreenScalerOutOfRangeFallbackProvider>
-    );
-}
+import("./main.lazy");
 ```
 
-> NOTE: We provide this example using the dedicated React adapter. To do that in another framework you
-> will need to replace your app by a fallback element when your `targetWindowInnerWidth` returns `undefined`.
-> If you'd like an adapter for your framework of choice, please open an issue.
+`src/main.lazy.tsx`
+
+```tsx
+import { evtIsScreenScalerOutOfBound } from "screen-scaler";
+import { useRerenderOnStateChange } from "evt/hooks/useRerenderOnStateChange";
+
+export function App() {
+    useRerenderOnStateChange(evtIsScreenScalerOutOfBound);
+
+    const isScreenScalerEnabled = evtIsScreenScalerOutOfBound.state !== undefined;
+    const isScreenScalerOutOfBound = evtIsScreenScalerOutOfBound.state;
+
+    if (isScreenScalerEnabled && isScreenScalerOutOfBound) {
+        return <h1>Please Rotate your phone, this app does not render well in portrait mode.</h1>;
+    }
+
+    return <>{/* ... Your App ... */}</>;
+}
+```
 
 ### Readability issues
 

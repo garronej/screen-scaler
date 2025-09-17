@@ -1,7 +1,6 @@
 
 import { useEffect, useState } from "react";
 
-
 export default function GetBoundingClientRectTest() {
 
     const [element, setElement] = useState<React.ElementRef<"div"> | null>(null);
@@ -17,8 +16,6 @@ export default function GetBoundingClientRectTest() {
         setDomRect(domRect);
 
     }, [element]);
-
-
 
     return (
         <div

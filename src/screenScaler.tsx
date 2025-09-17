@@ -1,40 +1,58 @@
 import { assert } from "tsafe/assert";
-import { Evt, type Ctx } from "evt";
+import { Evt, type Ctx, StatefulEvt } from "evt";
 import { onlyIfChanged } from "evt/operators/onlyIfChanged";
 import { injectPerformActionWithoutScreenScalerImpl } from "./performActionWithoutScreenScaler";
 import { exclude } from "tsafe/exclude";
 
-export const GLOBAL_NAME = "__screenScaler";
-
-let ctx: Ctx | undefined = undefined;
-
-export type ScreenScalerParams = {
-    targetWindowInnerWidth:
-        | (number | undefined)
-        | ((params: {
-              actualWindowInnerWidth: number;
-              actualWindowInnerHeight: number;
-              zoomFactor: number;
-              isPortraitOrientation: boolean;
-          }) => number | undefined);
+export type ParamsOfEnableScreenScaler = {
+    getTargetWindowInnerWidth: (params: {
+        actualWindowInnerWidth: number;
+        actualWindowInnerHeight: number;
+        zoomFactor: number;
+        isPortraitOrientation: boolean;
+    }) => number | undefined;
     rootDivId: string;
 };
 
-export function enableScreenScaler(params: ScreenScalerParams): {
+const GLOBAL_CONTEXT_KEY = "__screen-scaler.screenScaler.globalContext";
+
+declare global {
+    interface Window {
+        [GLOBAL_CONTEXT_KEY]: {
+            ctx: Ctx | undefined;
+            evtIsScreenScalerOutOfBound: StatefulEvt<boolean | undefined>;
+        };
+    }
+}
+
+window[GLOBAL_CONTEXT_KEY] ??= {
+    ctx: undefined,
+    evtIsScreenScalerOutOfBound: Evt.create<boolean | undefined>(undefined)
+};
+
+const globalContext = window[GLOBAL_CONTEXT_KEY];
+
+export const evtIsScreenScalerOutOfBound = Evt.asNonPostable(globalContext.evtIsScreenScalerOutOfBound);
+
+export function enableScreenScaler(params: ParamsOfEnableScreenScaler): {
     disableScreenScaler: () => void;
 } {
-    ctx?.done();
+    globalContext.ctx?.done();
 
-    // @ts-expect-error
-    window[GLOBAL_NAME] = true;
+    globalContext.ctx = Evt.newCtx();
 
-    ctx = Evt.newCtx();
+    const { ctx } = globalContext;
 
-    const getTargetWindowInnerWidth = (() => {
-        const { targetWindowInnerWidth: param } = params;
+    const { getTargetWindowInnerWidth: getTargetWindowInnerWidth_params } = params;
 
-        return typeof param === "function" ? param : () => param;
-    })();
+    const getTargetWindowInnerWidth: ParamsOfEnableScreenScaler["getTargetWindowInnerWidth"] =
+        params => {
+            const targetWindowInnerWidth = getTargetWindowInnerWidth_params(params);
+
+            globalContext.evtIsScreenScalerOutOfBound.state = targetWindowInnerWidth === undefined;
+
+            return targetWindowInnerWidth;
+        };
 
     const { rootDivId } = params;
 
@@ -44,36 +62,36 @@ export function enableScreenScaler(params: ScreenScalerParams): {
         assert(rootElement !== null);
 
         const initialStyles = {
-            "body": {
-                "margin": document.body.style.margin,
-                "transform": document.body.style.transform,
-                "transformOrigin": document.body.style.transformOrigin,
-                "width": document.body.style.width,
-                "height": document.body.style.height,
-                "overflow": document.body.style.overflow
+            body: {
+                margin: document.body.style.margin,
+                transform: document.body.style.transform,
+                transformOrigin: document.body.style.transformOrigin,
+                width: document.body.style.width,
+                height: document.body.style.height,
+                overflow: document.body.style.overflow
             },
-            "html": {
-                "height": document.documentElement.style.height,
-                "overflow": document.documentElement.style.overflow
+            html: {
+                height: document.documentElement.style.height,
+                overflow: document.documentElement.style.overflow
             },
-            "root":
+            root:
                 rootElement === undefined
                     ? undefined
                     : {
-                          "height": rootElement.style.height,
-                          "overflow": rootElement.style.overflow
+                          height: rootElement.style.height,
+                          overflow: rootElement.style.overflow
                       }
         };
 
         const backupPropertyDescriptors = (
             [
                 {
-                    "o": window,
-                    "propertyNames": ["innerWidth", "innerHeight", "visualViewport", "ResizeObserver"]
+                    o: window,
+                    propertyNames: ["innerWidth", "innerHeight", "visualViewport", "ResizeObserver"]
                 },
                 {
-                    "o": Element.prototype,
-                    "propertyNames": [
+                    o: Element.prototype,
+                    propertyNames: [
                         "getBoundingClientRect",
                         "getClientRects",
                         "clientLeft",
@@ -83,16 +101,16 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                     ]
                 },
                 {
-                    "o": Range.prototype,
-                    "propertyNames": ["getBoundingClientRect", "getClientRects"]
+                    o: Range.prototype,
+                    propertyNames: ["getBoundingClientRect", "getClientRects"]
                 },
                 {
-                    "o": ResizeObserverEntry.prototype,
-                    "propertyNames": ["contentRect"]
+                    o: ResizeObserverEntry.prototype,
+                    propertyNames: ["contentRect"]
                 },
                 {
-                    "o": MouseEvent.prototype,
-                    "propertyNames": [
+                    o: MouseEvent.prototype,
+                    propertyNames: [
                         "clientX",
                         "clientY",
                         "x",
@@ -112,7 +130,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             ] as const
         ).map(({ o, propertyNames }) => ({
             o,
-            "properties": Object.fromEntries(
+            properties: Object.fromEntries(
                 propertyNames
                     .map(
                         propertyName =>
@@ -193,12 +211,12 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                     : [
                           {
                               devicePixelRatio,
-                              "zoomLevel":
+                              zoomLevel:
                                   prev.zoomLevel + (devicePixelRatio > prev.devicePixelRatio ? 1 : -1)
                           }
                       ],
 
-            getPersistedZoomLevelState() ?? { devicePixelRatio, "zoomLevel": 0 }
+            getPersistedZoomLevelState() ?? { devicePixelRatio, zoomLevel: 0 }
         ])
         .pipe(onlyIfChanged())
         .pipe(
@@ -264,13 +282,13 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                     //NOTE: Using document dimensions instead of windows's dimensions because on mobile
                     // when we pinch and zoom the window's dimensions changes and we don't want to recomputes the UI
                     // in this case, we want to enable zooming on a portion of the screen.
-                    "actualWindowInnerWidth": clientWidthGetter.call(
+                    actualWindowInnerWidth: clientWidthGetter.call(
                         window.document.documentElement
                     ) as number,
-                    "actualWindowInnerHeight": clientHeightGetter.call(
+                    actualWindowInnerHeight: clientHeightGetter.call(
                         window.document.documentElement
                     ) as number,
-                    "zoomFactor": evtZoomFactor.state
+                    zoomFactor: evtZoomFactor.state
                 }
             ])
             .pipe(onlyIfChanged());
@@ -285,7 +303,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
         .pipe(() => [
             {
                 ...evtActualWindowInnerWidth.state,
-                "zoomFactor": evtZoomFactor.state
+                zoomFactor: evtZoomFactor.state
             }
         ])
         .pipe(({ actualWindowInnerHeight, actualWindowInnerWidth, zoomFactor }): [State] => {
@@ -293,7 +311,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                 actualWindowInnerWidth,
                 actualWindowInnerHeight,
                 zoomFactor,
-                "isPortraitOrientation": (() => {
+                isPortraitOrientation: (() => {
                     const isPortraitOrientation = actualWindowInnerWidth * 1.3 < actualWindowInnerHeight;
 
                     return isPortraitOrientation;
@@ -303,7 +321,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             if (targetWindowInnerWidth === undefined) {
                 return [
                     {
-                        "isOutOfRange": true,
+                        isOutOfRange: true,
                         actualWindowInnerHeight,
                         actualWindowInnerWidth
                     }
@@ -314,10 +332,10 @@ export function enableScreenScaler(params: ScreenScalerParams): {
 
             return [
                 {
-                    "isOutOfRange": false,
+                    isOutOfRange: false,
                     scaleFactor,
                     targetWindowInnerWidth,
-                    "targetWindowInnerHeight": actualWindowInnerHeight / scaleFactor,
+                    targetWindowInnerHeight: actualWindowInnerHeight / scaleFactor,
                     actualWindowInnerHeight,
                     actualWindowInnerWidth
                 }
@@ -325,32 +343,32 @@ export function enableScreenScaler(params: ScreenScalerParams): {
         });
 
     Object.defineProperties(window, {
-        "innerWidth": {
-            "get": () =>
+        innerWidth: {
+            get: () =>
                 evtState.state.isOutOfRange
                     ? evtState.state.actualWindowInnerWidth
                     : evtState.state.targetWindowInnerWidth,
-            "set": undefined,
-            "enumerable": true,
-            "configurable": true
+            set: undefined,
+            enumerable: true,
+            configurable: true
         },
-        "innerHeight": {
-            "get": () =>
+        innerHeight: {
+            get: () =>
                 evtState.state.isOutOfRange
                     ? evtState.state.actualWindowInnerHeight
                     : evtState.state.targetWindowInnerHeight,
-            "set": undefined,
-            "enumerable": true,
-            "configurable": true
+            set: undefined,
+            enumerable: true,
+            configurable: true
         },
-        "visualViewport": {
+        visualViewport: {
             ...(() => {
                 const windowVisualViewportPd = Object.getOwnPropertyDescriptor(window, "visualViewport");
 
                 assert(windowVisualViewportPd !== undefined);
 
                 return {
-                    "get": (() => {
+                    get: (() => {
                         const { get: realVisualViewportGetter } = windowVisualViewportPd ?? {};
 
                         assert(realVisualViewportGetter !== undefined);
@@ -358,7 +376,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                         const proxy = new Proxy(
                             {},
                             {
-                                "get": function (_target, prop) {
+                                get: function (_target, prop) {
                                     if (prop === "width") {
                                         return evtState.state.isOutOfRange
                                             ? evtState.state.actualWindowInnerWidth
@@ -394,11 +412,11 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                             return proxy;
                         };
                     })(),
-                    "set": windowVisualViewportPd.set
+                    set: windowVisualViewportPd.set
                 };
             })(),
-            "enumerable": true,
-            "configurable": true
+            enumerable: true,
+            configurable: true
         }
     });
 
@@ -428,51 +446,51 @@ export function enableScreenScaler(params: ScreenScalerParams): {
             );
 
             Object.defineProperties(domRectPatched, {
-                "x": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "get": getX_patched
+                x: {
+                    enumerable: true,
+                    configurable: true,
+                    get: getX_patched
                 },
-                "y": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "get": getY_patched
+                y: {
+                    enumerable: true,
+                    configurable: true,
+                    get: getY_patched
                 },
-                "width": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "get": getWidth_patched
+                width: {
+                    enumerable: true,
+                    configurable: true,
+                    get: getWidth_patched
                 },
-                "height": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "get": getHeight_patched
+                height: {
+                    enumerable: true,
+                    configurable: true,
+                    get: getHeight_patched
                 },
-                "left": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "get": () => domRect.left / getScaleFactor()
+                left: {
+                    enumerable: true,
+                    configurable: true,
+                    get: () => domRect.left / getScaleFactor()
                 },
-                "top": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "get": () => domRect.top / getScaleFactor()
+                top: {
+                    enumerable: true,
+                    configurable: true,
+                    get: () => domRect.top / getScaleFactor()
                 },
-                "right": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "get": () => domRect.right / getScaleFactor()
+                right: {
+                    enumerable: true,
+                    configurable: true,
+                    get: () => domRect.right / getScaleFactor()
                 },
-                "bottom": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "get": () => domRect.bottom / getScaleFactor()
+                bottom: {
+                    enumerable: true,
+                    configurable: true,
+                    get: () => domRect.bottom / getScaleFactor()
                 },
-                "screenScalerPatched": {
-                    "enumerable": true,
-                    "configurable": false,
-                    "writable": false,
-                    "value": "yes - DOMRect"
+                screenScalerPatched: {
+                    enumerable: true,
+                    configurable: false,
+                    writable: false,
+                    value: "yes - DOMRect"
                 }
             });
 
@@ -495,38 +513,38 @@ export function enableScreenScaler(params: ScreenScalerParams): {
 
             const properties: PropertyDescriptorMap = {
                 [Symbol.iterator]: {
-                    "enumerable": false,
-                    "configurable": true,
-                    "get": () => arrayOfPatchedDomRect[Symbol.iterator]
+                    enumerable: false,
+                    configurable: true,
+                    get: () => arrayOfPatchedDomRect[Symbol.iterator]
                 },
-                "length": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "writable": false,
-                    "value": arrayOfPatchedDomRect.length
+                length: {
+                    enumerable: true,
+                    configurable: true,
+                    writable: false,
+                    value: arrayOfPatchedDomRect.length
                 },
-                "item": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "writable": true,
-                    "value": function item(index: number) {
+                item: {
+                    enumerable: true,
+                    configurable: true,
+                    writable: true,
+                    value: function item(index: number) {
                         return arrayOfPatchedDomRect[index] ?? null;
                     }
                 },
-                "screenScalerPatched": {
-                    "enumerable": true,
-                    "configurable": false,
-                    "writable": false,
-                    "value": "yes - DOMRectList"
+                screenScalerPatched: {
+                    enumerable: true,
+                    configurable: false,
+                    writable: false,
+                    value: "yes - DOMRectList"
                 }
             };
 
             for (let i = 0; i < arrayOfPatchedDomRect.length; i++) {
                 properties[i] = {
-                    "enumerable": false,
-                    "configurable": true,
-                    "writable": true,
-                    "value": arrayOfPatchedDomRect[i]
+                    enumerable: false,
+                    configurable: true,
+                    writable: true,
+                    value: arrayOfPatchedDomRect[i]
                 };
             }
 
@@ -540,47 +558,47 @@ export function enableScreenScaler(params: ScreenScalerParams): {
 
             //Pollute HTMLDivElement.prototype.getBoundingClientRect
             Object.defineProperties(Element.prototype, {
-                "getBoundingClientRect": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "writable": false,
-                    "value": function getBoundingClientRect(this: Element) {
+                getBoundingClientRect: {
+                    enumerable: true,
+                    configurable: true,
+                    writable: false,
+                    value: function getBoundingClientRect(this: Element) {
                         return getPatchedDomRect(realGetBoundingClientRect.call(this));
                     }
                 },
-                "getClientRects": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "writable": false,
-                    "value": function getClientRects(this: Element) {
+                getClientRects: {
+                    enumerable: true,
+                    configurable: true,
+                    writable: false,
+                    value: function getClientRects(this: Element) {
                         return getPatchedDomRectList(realGetClientRects.call(this));
                     }
                 },
-                "clientLeft": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "get": function (this: Element) {
+                clientLeft: {
+                    enumerable: true,
+                    configurable: true,
+                    get: function (this: Element) {
                         return this.getBoundingClientRect().left;
                     }
                 },
-                "clientTop": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "get": function (this: Element) {
+                clientTop: {
+                    enumerable: true,
+                    configurable: true,
+                    get: function (this: Element) {
                         return this.getBoundingClientRect().top;
                     }
                 },
-                "clientWidth": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "get": function (this: Element) {
+                clientWidth: {
+                    enumerable: true,
+                    configurable: true,
+                    get: function (this: Element) {
                         return this.getBoundingClientRect().width;
                     }
                 },
-                "clientHeight": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "get": function (this: Element) {
+                clientHeight: {
+                    enumerable: true,
+                    configurable: true,
+                    get: function (this: Element) {
                         return this.getBoundingClientRect().height;
                     }
                 }
@@ -594,19 +612,19 @@ export function enableScreenScaler(params: ScreenScalerParams): {
 
             //Pollute HTMLDivElement.prototype.getBoundingClientRect
             Object.defineProperties(Range.prototype, {
-                "getBoundingClientRect": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "writable": false,
-                    "value": function getBoundingClientRect(this: Range) {
+                getBoundingClientRect: {
+                    enumerable: true,
+                    configurable: true,
+                    writable: false,
+                    value: function getBoundingClientRect(this: Range) {
                         return getPatchedDomRect(realGetBoundingClientRect.call(this));
                     }
                 },
-                "getClientRects": {
-                    "enumerable": true,
-                    "configurable": true,
-                    "writable": false,
-                    "value": function getClientRects(this: Range) {
+                getClientRects: {
+                    enumerable: true,
+                    configurable: true,
+                    writable: false,
+                    value: function getClientRects(this: Range) {
                         return getPatchedDomRectList(realGetClientRects.call(this));
                     }
                 }
@@ -622,21 +640,21 @@ export function enableScreenScaler(params: ScreenScalerParams): {
         assert(realContentRectGetter !== undefined);
 
         Object.defineProperty(ResizeObserverEntry.prototype, "contentRect", {
-            "configurable": true,
-            "enumerable": true,
-            "set": undefined,
-            "get": function (this: ResizeObserverEntry) {
+            configurable: true,
+            enumerable: true,
+            set: undefined,
+            get: function (this: ResizeObserverEntry) {
                 const { left, top, width, height, right, bottom } = realContentRectGetter.call(this);
 
                 const scaleFactor = getScaleFactor();
 
                 return {
-                    "left": left / scaleFactor,
-                    "top": top / scaleFactor,
-                    "width": width / scaleFactor,
-                    "height": height / scaleFactor,
-                    "right": right / scaleFactor,
-                    "bottom": bottom / scaleFactor
+                    left: left / scaleFactor,
+                    top: top / scaleFactor,
+                    width: width / scaleFactor,
+                    height: height / scaleFactor,
+                    right: right / scaleFactor,
+                    bottom: bottom / scaleFactor
                 };
             }
         });
@@ -677,10 +695,10 @@ export function enableScreenScaler(params: ScreenScalerParams): {
 
                 properties[propertyName] = {
                     ...pd,
-                    "get": function (this: MouseEvent) {
+                    get: function (this: MouseEvent) {
                         return get.call(this) / getScaleFactor();
                     },
-                    "set": undefined
+                    set: undefined
                 };
 
                 continue;
@@ -696,7 +714,7 @@ export function enableScreenScaler(params: ScreenScalerParams): {
 
                 properties[propertyName] = {
                     ...pd,
-                    "value": value / getScaleFactor()
+                    value: value / getScaleFactor()
                 };
 
                 continue;
@@ -733,16 +751,16 @@ export function enableScreenScaler(params: ScreenScalerParams): {
                             const contentRect = target.getBoundingClientRect();
 
                             const boxSize = {
-                                "inlineSize": contentRect.width,
-                                "blockSize": contentRect.height
+                                inlineSize: contentRect.width,
+                                blockSize: contentRect.height
                             };
 
                             const entry: ResizeObserverEntry = {
                                 target,
                                 contentRect,
-                                "borderBoxSize": [boxSize],
-                                "contentBoxSize": [boxSize],
-                                "devicePixelContentBoxSize": [boxSize]
+                                borderBoxSize: [boxSize],
+                                contentBoxSize: [boxSize],
+                                devicePixelContentBoxSize: [boxSize]
                             };
 
                             return entry;
@@ -802,8 +820,11 @@ export function enableScreenScaler(params: ScreenScalerParams): {
         document.body.style.overflow = "hidden";
     });
 
+    ctx.evtDoneOrAborted.attachOnce(() => {
+        globalContext.evtIsScreenScalerOutOfBound.state = undefined;
+    });
+
     function disableScreenScaler() {
-        assert(ctx !== undefined);
         ctx.done();
     }
 

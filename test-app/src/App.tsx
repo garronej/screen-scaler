@@ -1,12 +1,17 @@
 import { BasicSelect } from "./BasicSelect";
 import Button from "@mui/material/Button";
-//import "./main.css";
+import { evtIsScreenScalerOutOfBound } from "screen-scaler";
+import { useRerenderOnStateChange } from "evt/hooks";
 
 export default function App() {
 
+    useRerenderOnStateChange(evtIsScreenScalerOutOfBound);
+
+    const isScreeScalerEnabled= evtIsScreenScalerOutOfBound.state !== undefined;
+
     return (
             <div style={{
-                height: "100%",
+                height: isScreeScalerEnabled ? "100%" : "100vh",
                 backgroundColor: "pink",
                 boxSizing: "border-box",
                 display: "flex",

@@ -1,12 +1,5 @@
 
-import "./main.css";
 import Tooltip from "@mui/material/Tooltip";
-import { enableScreenScaler } from "screen-scaler/react";
-
-enableScreenScaler({
-    "targetWindowInnerWidth": 300,
-    "rootDivId": "root"
-});
 
 export function PopperTest() {
 

@@ -13,7 +13,8 @@
     "react-dom": "^18.2.0",
     "patch-package": "^8.0.0",
     "@codemirror/view": "6.34.1",
-    "screen-scaler": "file:../dist"
+    "screen-scaler": "file:../dist",
+    "evt": "^2.5.9"
   },
   "resolutions": {
     "@codemirror/view": "6.34.1"
