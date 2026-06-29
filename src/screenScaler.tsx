@@ -94,8 +94,6 @@ export function enableScreenScaler(params: ParamsOfEnableScreenScaler): {
                     propertyNames: [
                         "getBoundingClientRect",
                         "getClientRects",
-                        "clientLeft",
-                        "clientTop",
                         "clientWidth",
                         "clientHeight"
                     ]
@@ -103,10 +101,6 @@ export function enableScreenScaler(params: ParamsOfEnableScreenScaler): {
                 {
                     o: Range.prototype,
                     propertyNames: ["getBoundingClientRect", "getClientRects"]
-                },
-                {
-                    o: ResizeObserverEntry.prototype,
-                    propertyNames: ["contentRect"]
                 },
                 {
                     o: MouseEvent.prototype,
@@ -202,6 +196,15 @@ export function enableScreenScaler(params: ParamsOfEnableScreenScaler): {
         | { isOutOfRange: true }
     );
 
+    const { get: clientWidthGetter } =
+        Object.getOwnPropertyDescriptor(Element.prototype, "clientWidth") ?? {};
+
+    const { get: clientHeightGetter } =
+        Object.getOwnPropertyDescriptor(Element.prototype, "clientHeight") ?? {};
+
+    assert(clientWidthGetter !== undefined);
+    assert(clientHeightGetter !== undefined);
+
     const evtZoomFactor = Evt.from(ctx, window, "resize")
         .toStateful()
         .pipe([
@@ -266,15 +269,6 @@ export function enableScreenScaler(params: ParamsOfEnableScreenScaler): {
         ]);
 
     const { evtActualWindowInnerWidth } = (() => {
-        const { get: clientWidthGetter } =
-            Object.getOwnPropertyDescriptor(Element.prototype, "clientWidth") ?? {};
-
-        const { get: clientHeightGetter } =
-            Object.getOwnPropertyDescriptor(Element.prototype, "clientHeight") ?? {};
-
-        assert(clientWidthGetter !== undefined);
-        assert(clientHeightGetter !== undefined);
-
         const evtActualWindowInnerWidth = Evt.from(ctx, ResizeObserver, window.document.documentElement)
             .toStateful()
             .pipe(() => [
@@ -574,32 +568,26 @@ export function enableScreenScaler(params: ParamsOfEnableScreenScaler): {
                         return getPatchedDomRectList(realGetClientRects.call(this));
                     }
                 },
-                clientLeft: {
-                    enumerable: true,
-                    configurable: true,
-                    get: function (this: Element) {
-                        return this.getBoundingClientRect().left;
-                    }
-                },
-                clientTop: {
-                    enumerable: true,
-                    configurable: true,
-                    get: function (this: Element) {
-                        return this.getBoundingClientRect().top;
-                    }
-                },
                 clientWidth: {
                     enumerable: true,
                     configurable: true,
                     get: function (this: Element) {
-                        return this.getBoundingClientRect().width;
+                        if (this === window.document.documentElement) {
+                            return window.innerWidth;
+                        }
+
+                        return clientWidthGetter.call(this);
                     }
                 },
                 clientHeight: {
                     enumerable: true,
                     configurable: true,
                     get: function (this: Element) {
-                        return this.getBoundingClientRect().height;
+                        if (this === window.document.documentElement) {
+                            return window.innerHeight;
+                        }
+
+                        return clientHeightGetter.call(this);
                     }
                 }
             });
@@ -630,34 +618,6 @@ export function enableScreenScaler(params: ParamsOfEnableScreenScaler): {
                 }
             });
         }
-    }
-
-    // Pollute the argument of ResizeObserver callback
-    {
-        const { get: realContentRectGetter } =
-            Object.getOwnPropertyDescriptor(ResizeObserverEntry.prototype, "contentRect") ?? {};
-
-        assert(realContentRectGetter !== undefined);
-
-        Object.defineProperty(ResizeObserverEntry.prototype, "contentRect", {
-            configurable: true,
-            enumerable: true,
-            set: undefined,
-            get: function (this: ResizeObserverEntry) {
-                const { left, top, width, height, right, bottom } = realContentRectGetter.call(this);
-
-                const scaleFactor = getScaleFactor();
-
-                return {
-                    left: left / scaleFactor,
-                    top: top / scaleFactor,
-                    width: width / scaleFactor,
-                    height: height / scaleFactor,
-                    right: right / scaleFactor,
-                    bottom: bottom / scaleFactor
-                };
-            }
-        });
     }
 
     // Pollute the mouse event
