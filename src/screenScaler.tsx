@@ -1,7 +1,6 @@
 import { assert } from "tsafe/assert";
 import { Evt, type Ctx, StatefulEvt } from "evt";
 import { onlyIfChanged } from "evt/operators/onlyIfChanged";
-import { injectPerformActionWithoutScreenScalerImpl } from "./performActionWithoutScreenScaler";
 import { exclude } from "tsafe/exclude";
 
 export type ParamsOfEnableScreenScaler = {
@@ -103,6 +102,23 @@ export function enableScreenScaler(params: ParamsOfEnableScreenScaler): {
                     propertyNames: ["getBoundingClientRect", "getClientRects"]
                 },
                 {
+                    o: Document.prototype,
+                    propertyNames: [
+                        "elementFromPoint",
+                        "elementsFromPoint",
+                        "caretRangeFromPoint",
+                        "caretPositionFromPoint"
+                    ]
+                },
+                ...(typeof ShadowRoot === "undefined"
+                    ? []
+                    : [
+                          {
+                              o: ShadowRoot.prototype,
+                              propertyNames: ["elementFromPoint", "elementsFromPoint"]
+                          }
+                      ]),
+                {
                     o: MouseEvent.prototype,
                     propertyNames: [
                         "clientX",
@@ -155,20 +171,6 @@ export function enableScreenScaler(params: ParamsOfEnableScreenScaler): {
             };
 
             return { reEnableScreenScaler };
-        }
-
-        {
-            function performActionWithoutScreenScaler<T>(action: () => T): T {
-                const { reEnableScreenScaler } = disableScreenScaler();
-
-                const result = action();
-
-                reEnableScreenScaler();
-
-                return result;
-            }
-
-            injectPerformActionWithoutScreenScalerImpl(performActionWithoutScreenScaler);
         }
 
         ctx.evtDoneOrAborted.attachOnce(() => {
@@ -617,6 +619,102 @@ export function enableScreenScaler(params: ParamsOfEnableScreenScaler): {
                     }
                 }
             });
+        }
+    }
+
+    // Pollute point-to-DOM lookup APIs.
+    {
+        type DocumentWithCaretPositionFromPoint = Document & {
+            caretPositionFromPoint?: (x: number, y: number) => unknown;
+        };
+
+        const getRealPoint = (x: number, y: number) => ({
+            x: x * getScaleFactor(),
+            y: y * getScaleFactor()
+        });
+
+        const createElementFromPointProperties = <T extends Document | ShadowRoot>(params: {
+            elementFromPoint?: (x: number, y: number) => Element | null;
+            elementsFromPoint?: (x: number, y: number) => Element[];
+        }): PropertyDescriptorMap => {
+            const { elementFromPoint, elementsFromPoint } = params;
+
+            const properties: PropertyDescriptorMap = {};
+
+            if (elementFromPoint !== undefined) {
+                properties.elementFromPoint = {
+                    enumerable: true,
+                    configurable: true,
+                    writable: false,
+                    value: function (this: T, x: number, y: number) {
+                        const point = getRealPoint(x, y);
+
+                        return elementFromPoint.call(this, point.x, point.y);
+                    }
+                };
+            }
+
+            if (elementsFromPoint !== undefined) {
+                properties.elementsFromPoint = {
+                    enumerable: true,
+                    configurable: true,
+                    writable: false,
+                    value: function (this: T, x: number, y: number) {
+                        const point = getRealPoint(x, y);
+
+                        return elementsFromPoint.call(this, point.x, point.y);
+                    }
+                };
+            }
+
+            return properties;
+        };
+
+        const caretRangeFromPoint = Document.prototype.caretRangeFromPoint;
+        const caretPositionFromPoint = (Document.prototype as DocumentWithCaretPositionFromPoint)
+            .caretPositionFromPoint;
+
+        const documentProperties = createElementFromPointProperties<Document>({
+            elementFromPoint: Document.prototype.elementFromPoint,
+            elementsFromPoint: Document.prototype.elementsFromPoint
+        });
+
+        if (caretRangeFromPoint !== undefined) {
+            documentProperties.caretRangeFromPoint = {
+                enumerable: true,
+                configurable: true,
+                writable: false,
+                value: function (this: Document, x: number, y: number) {
+                    const point = getRealPoint(x, y);
+
+                    return caretRangeFromPoint.call(this, point.x, point.y);
+                }
+            };
+        }
+
+        if (caretPositionFromPoint !== undefined) {
+            documentProperties.caretPositionFromPoint = {
+                enumerable: true,
+                configurable: true,
+                writable: false,
+                value: function (this: Document, x: number, y: number) {
+                    const point = getRealPoint(x, y);
+
+                    return caretPositionFromPoint.call(this, point.x, point.y);
+                }
+            };
+        }
+
+        Object.defineProperties(Document.prototype, documentProperties);
+
+        if (typeof ShadowRoot !== "undefined") {
+            Object.defineProperties(
+                ShadowRoot.prototype,
+                createElementFromPointProperties<ShadowRoot>({
+                    elementFromPoint: ShadowRoot.prototype.elementFromPoint,
+                    elementsFromPoint: ShadowRoot.prototype.elementsFromPoint
+                })
+            );
         }
     }
 

@@ -2,9 +2,9 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { evtIsScreenScalerOutOfBound } from "screen-scaler";
 import { useRerenderOnStateChange } from "evt/hooks/useRerenderOnStateChange";
-import App from "./App";
+//import App from "./App";
 //import GetBoundingClientRectTest from "./GetBoundingClientRectTest";
-//import Code from "./Code";
+import Code from "./Code";
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -24,9 +24,9 @@ function Root(){
     return <h1>Rotate your phone</h1>;
   }
 
-  //return <Code />;
+  return <Code />;
   //return <GetBoundingClientRectTest />;
-  return <App />;
+  //return <App />;
 
 }
 
